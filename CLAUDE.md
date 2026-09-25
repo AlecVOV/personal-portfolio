@@ -177,7 +177,7 @@ Each app has `.env.example` with names only.
 Phase 1 — repo
 - [x] Delete nested `.git`; rename folders to `apps/it-portfolio`, `apps/photography-portfolio`.
 - [x] Root `.gitignore`; `git init`; verify no `.env` is staged.
-- [x] Move `apps/photography-portfolio/public/img for resize/` OUT of the repo (moved to `D:portfolio-originalsphotography`) before the first commit; used later as Phase 5 upload source.
+- [x] Move `apps/photography-portfolio/public/img for resize/` OUT of the repo (moved to `D:\portfolio-originals\photography`) before the first commit; used later as Phase 5 upload source.
 - [x] Replace the real Supabase URL + anon key in `apps/it-portfolio/supabase/sql_command.sql` with placeholders.
 - [x] First commit + push.
 

@@ -1,13 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
   personal-portfolio serverless infra (ap-southeast-1): DynamoDB x2 (on-demand), private S3 media bucket
-  behind CloudFront + OAC, Amplify compute roles x2, SES email identity, Cognito admin user pool.
+  behind CloudFront + OAC, Amplify compute roles x2, SES email identity, Cognito admin user pool,
+  5 USD/month cost budget alert.
   See docs/data-model.md for the table design.
 
 Parameters:
   OwnerEmail:
     Type: String
-    Description: Owner address. SES identity (sender + only recipient while in sandbox).
+    Description: Owner address. SES identity (sender + only recipient while in sandbox) and budget alerts.
     AllowedPattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
   AllowedOrigins:
     Type: CommaDelimitedList
@@ -252,6 +253,31 @@ Resources:
     Type: AWS::SES::EmailIdentity
     Properties:
       EmailIdentity: !Ref OwnerEmail
+
+  # ── Cost alert (budgets without actions are free) ───────────────────────
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: portfolio-monthly-5usd
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: 5, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - { SubscriptionType: EMAIL, Address: !Ref OwnerEmail }
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - { SubscriptionType: EMAIL, Address: !Ref OwnerEmail }
 
   # ── Cognito (admin login for both sites) ─────────────────────────────────
   UserPool:
