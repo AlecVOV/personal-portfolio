@@ -1,0 +1,96 @@
+/* Main CSS file for global styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global AWS Dark Theme Base ──────────────────── */
+@layer base {
+  body {
+    @apply bg-aws-squid-ink text-white;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+/* ── Scrollbar Styling (Dark Theme) ──────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1C2533;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF9900;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #E68A00;
+}
+
+/* ── Focus styles for accessibility ──────────────── */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid #FF9900;
+  outline-offset: 2px;
+}
+
+/* ── Smooth scrolling ────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Loading animation ───────────────────────────── */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ── Skeleton loading styles (Dark Theme) ────────── */
+.skeleton {
+  background: linear-gradient(90deg, #1C2533 25%, #232F3E 50%, #1C2533 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Error styles ────────────────────────────────── */
+.error-boundary {
+  padding: 2rem;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 0.5rem;
+  color: #991B1B;
+}
+
+/* ── Transition improvements ─────────────────────── */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
