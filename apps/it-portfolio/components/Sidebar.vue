@@ -75,7 +75,7 @@ const props = defineProps<{
 
 defineEmits(['close-sidebar'])
 
-const { getPublicUrl } = useSupabaseData()
+const { getPublicUrl } = useSiteData()
 
 const avatarSrc = computed(() => {
   if (!props.profile?.avatar_url) return '/my_image2.jpg'

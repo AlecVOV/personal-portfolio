@@ -1,52 +1,28 @@
+// Admin CRUD for one collection through /api/admin/crud/<collection> (auth enforced server-side).
 export const useAdminCrud = <T extends Record<string, any>>(tableName: string) => {
-  const client = useSupabaseClient()
+  const base = `/api/admin/crud/${tableName}`
 
   const getAll = async (orderBy = 'sort_order'): Promise<T[]> => {
-    const { data, error } = await client
-      .from(tableName)
-      .select('*')
-      .order(orderBy)
-    if (error) throw error
-    return data as T[]
+    const items = await $fetch<T[]>(base)
+    return [...items].sort((a, b) => {
+      const x = a[orderBy], y = b[orderBy]
+      if (x === y) return 0
+      if (x === undefined || x === null) return 1
+      if (y === undefined || y === null) return -1
+      return x < y ? -1 : 1
+    })
   }
 
-  const getById = async (id: string): Promise<T | null> => {
-    const { data, error } = await client
-      .from(tableName)
-      .select('*')
-      .eq('id', id)
-      .single()
-    if (error) throw error
-    return data as T
-  }
+  const getById = (id: string): Promise<T> => $fetch<T>(`${base}/${id}`)
 
-  const create = async (record: Partial<T>): Promise<T> => {
-    const { data, error } = await client
-      .from(tableName)
-      .insert(record)
-      .select()
-      .single()
-    if (error) throw error
-    return data as T
-  }
+  const create = (record: Partial<T>): Promise<T> =>
+    $fetch<T>(base, { method: 'POST', body: record })
 
-  const update = async (id: string, record: Partial<T>): Promise<T> => {
-    const { data, error } = await client
-      .from(tableName)
-      .update(record)
-      .eq('id', id)
-      .select()
-      .single()
-    if (error) throw error
-    return data as T
-  }
+  const update = (id: string, record: Partial<T>): Promise<T> =>
+    $fetch<T>(`${base}/${id}`, { method: 'PUT', body: record })
 
   const remove = async (id: string): Promise<void> => {
-    const { error } = await client
-      .from(tableName)
-      .delete()
-      .eq('id', id)
-    if (error) throw error
+    await $fetch(`${base}/${id}`, { method: 'DELETE' })
   }
 
   return { getAll, getById, create, update, remove }

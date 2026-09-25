@@ -52,10 +52,9 @@
 </template>
 
 <script setup lang="ts">
-const client = useSupabaseClient()
+const { signOut } = useAuth()
 
 const handleLogout = async () => {
-  await client.auth.signOut()
-  await navigateTo('/admin/login')
+  await signOut()
 }
 </script>

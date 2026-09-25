@@ -186,9 +186,8 @@ import type { BlogPostDB } from '~/types/portfolio'
 definePageMeta({ middleware: ['admin-auth'], layout: 'admin' })
 
 const { getAll, create, update, remove } = useAdminCrud<BlogPostDB>('blog_posts')
-const { uploadFile, deleteFile } = useStorageUpload()
-const { getPublicUrl } = useSupabaseData()
-const client = useSupabaseClient()
+const { uploadFile, deleteFile, listFiles } = useStorageUpload()
+const { getPublicUrl } = useSiteData()
 
 const items = ref<BlogPostDB[]>([])
 const loading = ref(true)
@@ -229,9 +228,10 @@ const getBlogImageUrl = (name: string) => getPublicUrl('blog-images', name)
 
 const fetchBlogImages = async () => {
   browsingBlog.value = true
-  const { data, error } = await client.storage.from('blog-images').list()
-  if (!error && data) {
-    blogImages.value = data.filter(f => f.name.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i))
+  try {
+    blogImages.value = (await listFiles('blog-images')).filter(f => f.name.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i))
+  } catch (err) {
+    console.error('List error:', err)
   }
   browsingBlog.value = false
 }
@@ -332,11 +332,7 @@ const handleSave = async () => {
     let imageUrl: string | undefined
 
     if (selectedFile.value) {
-      const timestamp = Date.now()
-      const safeName = selectedFile.value.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-      const filePath = `${timestamp}-${safeName}`
-      await uploadFile('blog-images', filePath, selectedFile.value)
-      imageUrl = filePath
+      imageUrl = await uploadFile('blog-images', selectedFile.value.name, selectedFile.value)
     } else if (selectedBlogPath.value) {
       imageUrl = selectedBlogPath.value
     }

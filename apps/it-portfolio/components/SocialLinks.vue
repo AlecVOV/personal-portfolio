@@ -52,7 +52,7 @@ const props = defineProps<{
   profile?: Profile | null
 }>()
 
-const { getPublicUrl } = useSupabaseData()
+const { getPublicUrl } = useSiteData()
 
 const resumeSrc = computed(() => {
   if (!props.profile?.resume_url) return null

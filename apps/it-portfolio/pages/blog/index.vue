@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-const { fetchBlogPosts, getPublicUrl } = useSupabaseData()
+const { fetchBlogPosts, getPublicUrl } = useSiteData()
 
 const { data: posts, pending } = await useAsyncData('blog-posts', () => fetchBlogPosts())
 

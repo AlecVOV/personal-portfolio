@@ -87,7 +87,6 @@
 <script setup lang="ts">
 definePageMeta({ middleware: ['admin-auth'], layout: 'admin' })
 
-const client = useSupabaseClient()
 const messages = ref<any[]>([])
 const loading = ref(true)
 const viewingMessage = ref<any>(null)
@@ -105,8 +104,11 @@ const replyBody = ref('')
 
 const load = async () => {
   loading.value = true
-  const { data, error } = await client.from('contact_messages').select('*').order('created_at', { ascending: false })
-  if (!error && data) messages.value = data
+  try {
+    messages.value = await $fetch<any[]>('/api/admin/messages')
+  } catch (err) {
+    console.error(err)
+  }
   loading.value = false
 }
 
@@ -132,7 +134,7 @@ const sendReply = async () => {
       },
     })
 
-    await client.from('contact_messages').update({ replied: true }).eq('id', replyTarget.value.id)
+    await $fetch(`/api/admin/messages/${replyTarget.value.id}`, { method: 'PUT', body: { replied: true } })
     replyTarget.value = null
     await load()
   } catch (err) {

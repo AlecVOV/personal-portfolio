@@ -80,7 +80,7 @@ import MarkdownIt from 'markdown-it'
 const route = useRoute()
 const slug = route.params.slug as string
 
-const { fetchBlogPostBySlug, getPublicUrl } = useSupabaseData()
+const { fetchBlogPostBySlug, getPublicUrl } = useSiteData()
 
 const { data: post, pending } = await useAsyncData(
   `blog-${slug}`,

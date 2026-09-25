@@ -503,35 +503,10 @@
 <script setup lang="ts">
 import type { ContactForm, Section, FormSubmissionResponse, Profile, SocialLink, Project, Skill, Education, Experience, Certification, Field } from '~/types/portfolio'
 
-// Fetch all portfolio data from Supabase in parallel
-const {
-  fetchProfile, fetchSocialLinks, fetchFields, fetchEducation,
-  fetchExperience, fetchSkills, fetchCertifications, fetchProjects,
-  getPublicUrl,
-} = useSupabaseData()
+// Fetch all portfolio data in one request (one DynamoDB Query on the server)
+const { fetchSite, getPublicUrl } = useSiteData()
 
-const { data: portfolio } = await useAsyncData('portfolio-data', async () => {
-  const [profileData, socialLinksData, fieldsData, educationData, experienceData, skillsData, certificationsData, projectsData] = await Promise.all([
-    fetchProfile(),
-    fetchSocialLinks(),
-    fetchFields(),
-    fetchEducation(),
-    fetchExperience(),
-    fetchSkills(),
-    fetchCertifications(),
-    fetchProjects(),
-  ])
-  return {
-    profile: profileData,
-    socialLinks: socialLinksData,
-    fields: fieldsData,
-    education: educationData,
-    experience: experienceData,
-    skills: skillsData,
-    certifications: certificationsData,
-    projects: projectsData,
-  }
-})
+const { data: portfolio } = await useAsyncData('portfolio-data', () => fetchSite())
 
 // Computed accessors for template use
 const profile = computed<Profile | null>(() => portfolio.value?.profile ?? null)
@@ -542,7 +517,6 @@ const experience = computed<Experience[]>(() => portfolio.value?.experience ?? [
 const skills = computed<Skill[]>(() => portfolio.value?.skills ?? [])
 const certifications = computed<Certification[]>(() => portfolio.value?.certifications ?? [])
 const projects = computed<Project[]>(() => portfolio.value?.projects ?? [])
-const client = useSupabaseClient()
 
 const { error, isLoading, handleError, withErrorHandling, clearError } = useErrorHandler()
 const { validateForm, sanitizeForm } = useFormValidation()
@@ -596,44 +570,17 @@ const handleImageLoadError = (event: Event) => {
   handleImageError(event, '/images/placeholder.svg')
 }
 
-// Enhanced form submission with better error handling
-const sendSubmission = async (accessKey: string, recipient: string): Promise<FormSubmissionResponse> => {
+// Contact form → own server route (saved to DynamoDB, owner notified by SES)
+const sendSubmission = async (): Promise<FormSubmissionResponse> => {
+  const sanitizedForm = sanitizeForm(contactForm)
   try {
-    const sanitizedForm = sanitizeForm(contactForm)
-    
-    const formData = new FormData()
-    formData.append('name', sanitizedForm.name)
-    formData.append('email', sanitizedForm.email)
-    formData.append('message', sanitizedForm.message)
-    formData.append('access_key', accessKey)
-    formData.append('recipient', recipient)
-
-    const object = Object.fromEntries(formData.entries())
-    const json = JSON.stringify(object)
-
-    const response = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json"
-      },
-      body: json
+    await $fetch('/api/contact', {
+      method: 'POST',
+      body: { name: sanitizedForm.name, email: sanitizedForm.email, message: sanitizedForm.message },
     })
-
-    const result = await response.json()
-    
-    if (!response.ok) {
-      throw new Error(result.message || `HTTP error! status: ${response.status}`)
-    }
-
-    if (!result.success) {
-      throw new Error(result.message || 'Form submission failed')
-    }
-
-    return result
-  } catch (error) {
-    console.error('Form submission error:', error)
-    throw error
+    return { success: true, message: 'Message sent' }
+  } catch (error: any) {
+    throw new Error(error?.data?.message || 'Failed to send message. Please try again or contact me directly.')
   }
 }
 
@@ -654,72 +601,14 @@ const handleSubmit = async (event: Event) => {
   
   isSubmitting.value = true
   try {
-    // Check configuration
-    if (!config.public.web3FormsAccessKey1 || !config.public.contactEmail1) {
-      throw new Error('Form configuration is missing. Please contact the site administrator.')
-    }
+    await sendSubmission()
+    submitStatus.value = 'success'
 
-    let successCount = 0
-    const errors: string[] = []
+    // Reset form on success
+    contactForm.name = ""
+    contactForm.email = ""
+    contactForm.message = ""
 
-    // First submission (primary)
-    try {
-      const result1 = await sendSubmission(
-        config.public.web3FormsAccessKey1, 
-        config.public.contactEmail1
-      )
-      console.log("Form submitted successfully to first recipient:", result1)
-      successCount++
-    } catch (error1: unknown) {
-      console.error('First submission failed:', error1)
-      const errorMsg = error1 instanceof Error ? error1.message : String(error1)
-      errors.push(`Primary submission failed: ${errorMsg}`)
-    }
-
-    // Second submission (backup - if configured)
-    if (config.public.web3FormsAccessKey2 && config.public.contactEmail2) {
-      try {
-        const result2 = await sendSubmission(
-          config.public.web3FormsAccessKey2, 
-          config.public.contactEmail2
-        )
-        console.log("Form submitted successfully to second recipient:", result2)
-        successCount++
-      } catch (error2: unknown) {
-        console.error('Second submission failed:', error2)
-        const errorMsg = error2 instanceof Error ? error2.message : String(error2)
-        errors.push(`Backup submission failed: ${errorMsg}`)
-      }
-    } else {
-      // If no backup configured, we only need primary to succeed
-      successCount = successCount > 0 ? 2 : 0
-    }
-
-    // Determine overall success
-    if (successCount > 0) {
-      submitStatus.value = 'success'
-            
-      // Save to Supabase
-      await client.from('contact_messages').insert({
-        guest_name: contactForm.name,
-        guest_email: contactForm.email,
-        message: contactForm.message,
-      })
-
-      // Reset form on success
-      contactForm.name = ""
-      contactForm.email = ""
-      contactForm.message = ""
-      
-      // Log any partial failures
-      if (errors.length > 0) {
-        console.warn('Some submissions failed but message was delivered:', errors)
-      }
-    } else {
-      // All submissions failed
-      throw new Error(errors.join('; ') || 'All form submissions failed')
-    }
-    
   } catch (error) {
     console.error('Form submission error:', error)
     submitStatus.value = 'error'
@@ -737,7 +626,7 @@ const handleSubmit = async (event: Event) => {
   }
 }
 
-// Helper: resolve Supabase storage URL from relative path
+// Helper: resolve a media URL (full URL or bucket-relative path)
 const getProjectImage = (imageUrl: string | null): string => {
   if (!imageUrl) return ''
   // If it's already a full URL, return as-is

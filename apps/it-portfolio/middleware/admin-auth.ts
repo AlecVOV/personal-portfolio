@@ -1,7 +1,9 @@
+// Admin pages are client-rendered (routeRules ssr: false); the API enforces auth independently.
 export default defineNuxtRouteMiddleware(async () => {
-  const user = useSupabaseUser()
+  const { loggedIn, ready, fetch } = useUserSession()
+  if (!ready.value) await fetch()
 
-  if (!user.value) {
+  if (!loggedIn.value) {
     return navigateTo('/admin/login')
   }
 })

@@ -206,10 +206,9 @@ definePageMeta({
   layout: 'admin',
 })
 
-const { create, update, remove } = useAdminCrud<Project>('projects')
-const { uploadFile, deleteFile } = useStorageUpload()
-const { getPublicUrl } = useSupabaseData()
-const client = useSupabaseClient()
+const { getAll, create, update, remove } = useAdminCrud<Project>('projects')
+const { uploadFile, deleteFile, listFiles } = useStorageUpload()
+const { getPublicUrl } = useSiteData()
 
 // ── State ──────────────────────────────────────────
 const projects = ref<Project[]>([])
@@ -257,16 +256,10 @@ const browsingBucket = ref(false)
 // ── Load Data ──────────────────────────────────────
 const loadProjects = async () => {
   loading.value = true
-  const { data, error } = await client
-    .from('projects')
-    .select('*, project_categories(category)')
-    .order('sort_order')
-
-  if (!error && data) {
-    projects.value = data.map((p: any) => ({
-      ...p,
-      categories: p.project_categories?.map((pc: any) => pc.category) ?? [],
-    }))
+  try {
+    projects.value = await getAll('sort_order')
+  } catch (err) {
+    console.error('Load error:', err)
   }
   loading.value = false
 }
@@ -325,9 +318,10 @@ const handleFileSelect = (event: Event) => {
 // ── Bucket Browsing ────────────────────────────────
 const fetchBucketImages = async () => {
   browsingBucket.value = true
-  const { data, error } = await client.storage.from('projects').list()
-  if (!error && data) {
-    bucketImages.value = data.filter(f => f.name.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i))
+  try {
+    bucketImages.value = (await listFiles('projects')).filter(f => f.name.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i))
+  } catch (err) {
+    console.error('List error:', err)
   }
   browsingBucket.value = false
 }
@@ -350,36 +344,10 @@ const handleSave = async () => {
     let imageUrl: string | undefined
 
     if (selectedFile.value) {
-      const timestamp = Date.now()
-      const safeName = selectedFile.value.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-      const filePath = `${timestamp}-${safeName}`
-      await uploadFile('projects', filePath, selectedFile.value)
-      imageUrl = filePath
+      imageUrl = await uploadFile('projects', selectedFile.value.name, selectedFile.value)
     } else if (selectedExistingPath.value) {
       imageUrl = selectedExistingPath.value
     }
-
-    const record: Record<string, any> = {
-      title: form.title,
-      description: form.description,
-      github_url: form.github_url,
-      demo_url: form.demo_url || null,
-      sort_order: form.sort_order,
-    }
-    if (imageUrl) record.image_url = imageUrl
-
-    let projectId: string
-
-    if (isEditing.value && editingId.value) {
-      await update(editingId.value, record)
-      projectId = editingId.value
-    } else {
-      const created = await create(record)
-      projectId = created.id
-    }
-
-    // Sync categories — inject Research Paper if selected
-    await client.from('project_categories').delete().eq('project_id', projectId)
 
     const categories = categoriesInput.value
       .split(',')
@@ -391,10 +359,20 @@ const handleSave = async () => {
       categories.push('Research Paper')
     }
 
-    if (categories.length > 0) {
-      await client.from('project_categories').insert(
-        categories.map(category => ({ project_id: projectId, category }))
-      )
+    const record: Record<string, any> = {
+      categories,
+      title: form.title,
+      description: form.description,
+      github_url: form.github_url,
+      demo_url: form.demo_url || null,
+      sort_order: form.sort_order,
+    }
+    if (imageUrl) record.image_url = imageUrl
+
+    if (isEditing.value && editingId.value) {
+      await update(editingId.value, record)
+    } else {
+      await create(record)
     }
 
     showModal.value = false

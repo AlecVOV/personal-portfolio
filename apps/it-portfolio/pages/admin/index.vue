@@ -34,40 +34,18 @@ definePageMeta({
   layout: 'admin',
 })
 
-const client = useSupabaseClient()
-
-const [
-  { count: projectCount },
-  { count: blogCount },
-  { count: certCount },
-  { count: skillCount },
-  { count: expCount },
-  { count: eduCount },
-  { count: fieldCount },
-  { count: linkCount },
-  { count: messageCount },
-] = await Promise.all([
-  client.from('projects').select('*', { count: 'exact', head: true }),
-  client.from('blog_posts').select('*', { count: 'exact', head: true }),
-  client.from('certifications').select('*', { count: 'exact', head: true }),
-  client.from('skills').select('*', { count: 'exact', head: true }),
-  client.from('experience').select('*', { count: 'exact', head: true }),
-  client.from('education').select('*', { count: 'exact', head: true }),
-  client.from('fields').select('*', { count: 'exact', head: true }),
-  client.from('social_links').select('*', { count: 'exact', head: true }),
-  client.from('contact_messages').select('*', { count: 'exact', head: true }),
-])
+const counts = await $fetch<Record<string, number>>('/api/admin/stats')
 
 const stats = [
-  { label: 'Projects', count: projectCount ?? 0},
-  { label: 'Blog Posts', count: blogCount ?? 0},
-  { label: 'Certifications', count: certCount ?? 0},
-  { label: 'Skills', count: skillCount ?? 0},
-  { label: 'Experience', count: expCount ?? 0},
-  { label: 'Education', count: eduCount ?? 0},
-  { label: 'Fields', count: fieldCount ?? 0},
-  { label: 'Social Links', count: linkCount ?? 0},
-  { label: 'Messages', count: messageCount ?? 0},
+  { label: 'Projects', count: counts.projects ?? 0},
+  { label: 'Blog Posts', count: counts.blog ?? 0},
+  { label: 'Certifications', count: counts.certifications ?? 0},
+  { label: 'Skills', count: counts.skills ?? 0},
+  { label: 'Experience', count: counts.experience ?? 0},
+  { label: 'Education', count: counts.education ?? 0},
+  { label: 'Fields', count: counts.fields ?? 0},
+  { label: 'Social Links', count: counts.socialLinks ?? 0},
+  { label: 'Messages', count: counts.messages ?? 0},
 ]
 
 const navItems = [

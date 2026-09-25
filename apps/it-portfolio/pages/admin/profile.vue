@@ -191,9 +191,8 @@ definePageMeta({
   layout: 'admin',
 })
 
-const client = useSupabaseClient()
-const { uploadFile } = useStorageUpload()
-const { getPublicUrl } = useSupabaseData()
+const { uploadFile, listFiles } = useStorageUpload()
+const { getPublicUrl } = useSiteData()
 
 const profile = ref<Profile | null>(null)
 const loadingProfile = ref(true)
@@ -232,11 +231,13 @@ const fetchBucketFiles = async (bucket: string, field: 'avatar' | 'resume' | 'cv
   else if (field === 'resume') browsingResume.value = true
   else browsingCv.value = true
 
-  const { data, error } = await client.storage.from(bucket).list()
-  if (!error && data) {
+  try {
+    const data = await listFiles(bucket)
     if (field === 'avatar') avatarFiles.value = filterFiles(data, /\.(png|jpg|jpeg|gif|webp|svg)$/i)
     else if (field === 'resume') resumeFiles.value = filterFiles(data, /\.pdf$/i)
     else cvFiles.value = filterFiles(data, /\.pdf$/i)
+  } catch (err) {
+    console.error('List error:', err)
   }
 
   if (field === 'avatar') browsingAvatar.value = false
@@ -260,8 +261,7 @@ const onCvBucketSelect = () => {
 }
 
 // Load existing profile
-const { data } = await client.from('profile').select('*').single()
-if (data) profile.value = data as Profile
+profile.value = await $fetch<Profile | null>('/api/admin/profile').catch(() => null)
 loadingProfile.value = false
 
 const form = reactive({
@@ -277,7 +277,6 @@ const form = reactive({
 
 // Set avatar preview if exists
 if (profile.value?.avatar_url) {
-  const { getPublicUrl } = useSupabaseData()
   avatarPreview.value = getPublicUrl('avatars', profile.value.avatar_url)
 }
 
@@ -302,32 +301,26 @@ const handleSave = async () => {
   try {
     const record: Record<string, any> = { ...form }
 
+    // Uploads get unique keys (CloudFront caches files forever), so a new avatar/CV = a new URL.
     if (avatarFile.value) {
-      await uploadFile('avatars', 'avatar.webp', avatarFile.value)
-      record.avatar_url = 'avatar.webp'
+      record.avatar_url = await uploadFile('avatars', avatarFile.value.name, avatarFile.value)
     } else if (selectedAvatarPath.value) {
       record.avatar_url = selectedAvatarPath.value
     }
 
     if (resumeFile.value) {
-      await uploadFile('resumes', 'resume.pdf', resumeFile.value)
-      record.resume_url = 'resume.pdf'
+      record.resume_url = await uploadFile('resumes', resumeFile.value.name, resumeFile.value)
     } else if (selectedResumePath.value) {
       record.resume_url = selectedResumePath.value
     }
 
     if (cvFile.value) {
-      await uploadFile('cv', 'cv.pdf', cvFile.value)
-      record.cv_url = 'cv.pdf'
+      record.cv_url = await uploadFile('cv', cvFile.value.name, cvFile.value)
     } else if (selectedCvPath.value) {
       record.cv_url = selectedCvPath.value
     }
 
-    if (profile.value) {
-      await client.from('profile').update(record).eq('id', profile.value.id)
-    } else {
-      await client.from('profile').insert(record)
-    }
+    profile.value = await $fetch<Profile>('/api/admin/profile', { method: 'PUT', body: record })
 
     successMsg.value = 'Profile saved successfully!'
   } catch (err) {

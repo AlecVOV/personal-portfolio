@@ -1,17 +1,19 @@
+// Env vars are read at BUILD time (Amplify bakes them in) — redeploy after changing any.
+const PUBLIC_CACHE = { 'cache-control': 's-maxage=300, stale-while-revalidate=86400' }
+const NO_STORE = { 'cache-control': 'no-store' }
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: false },
   modules: [
-    '@nuxtjs/tailwindcss', 
-    '@nuxtjs/supabase'
+    '@nuxtjs/tailwindcss',
+    'nuxt-auth-utils',
   ],
-  
-  // Supabase module config
-  supabase: {
-    redirect: false,  // We use middleware/admin-auth.ts for route protection
-    types: '~/types/portfolio.ts',
-  },
-  
+
+  // Session is loaded in the browser only, so public SSR HTML (cached by the CDN) never
+  // contains session data. Admin pages are client-rendered.
+  auth: { loadStrategy: 'client-only' },
+
   // CSS configuration
   css: ['~/assets/css/main.css'],
     app: {
@@ -35,8 +37,8 @@ export default defineNuxtConfig({
         { name: 'twitter:description', content: process.env.NUXT_SITE_DESCRIPTION || 'Computer Science student specializing in AI and Data Science' }
       ],
       link: [
-        { 
-          rel: 'stylesheet', 
+        {
+          rel: 'stylesheet',
           href: 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap'
         },
         {
@@ -51,52 +53,55 @@ export default defineNuxtConfig({
       ]
     }
   },
-  
+
+  routeRules: {
+    // Public pages + public read APIs: let the CDN absorb traffic.
+    '/': { headers: PUBLIC_CACHE },
+    '/blog/**': { headers: PUBLIC_CACHE },
+    '/api/**': { headers: NO_STORE },
+    '/api/site': { headers: PUBLIC_CACHE },
+    '/api/blog': { headers: PUBLIC_CACHE },
+    '/api/blog/**': { headers: PUBLIC_CACHE },
+    // Admin: client-rendered, never cached.
+    '/admin/**': { ssr: false, headers: NO_STORE },
+  },
+
   // Build optimizations
   nitro: {
     compressPublicAssets: true,
-    minify: true
-  },    // Runtime config
+    minify: true,
+    awsAmplify: { runtime: 'nodejs20.x' },
+  },
+
+  // Runtime config
   runtimeConfig: {
     // Server-side only (not exposed to client)
-    resendApiKey: process.env.RESEND_API_KEY,
-    // Public keys (client-side accessible) - moved Web3Forms to public since it's used client-side
+    appRegion: process.env.APP_REGION || 'ap-southeast-1',
+    appTableName: process.env.APP_TABLE_NAME || '',
+    appMediaBucket: process.env.APP_MEDIA_BUCKET || '',
+    cognitoUserPoolId: process.env.APP_COGNITO_USER_POOL_ID || '',
+    cognitoClientId: process.env.APP_COGNITO_CLIENT_ID || '',
+    adminSub: process.env.APP_ADMIN_SUB || '',
+    sesFromEmail: process.env.SES_FROM_EMAIL || '',
+    contactToEmail: process.env.CONTACT_TO_EMAIL || '',
+    session: {
+      name: 'it-admin',
+      password: process.env.NUXT_SESSION_PASSWORD || '',
+      maxAge: 60 * 60 * 8,
+      cookie: { sameSite: 'lax' },
+    },
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://your-domain.com',
       siteName: process.env.NUXT_SITE_NAME || 'Le Hoang Triet Thong Portfolio',
       siteDescription: process.env.NUXT_SITE_DESCRIPTION || 'Computer Science student specializing in AI and Data Science',
       enableAnalytics: process.env.NUXT_ENABLE_ANALYTICS === 'true',
       enableErrorReporting: process.env.NUXT_ENABLE_ERROR_REPORTING === 'true',
-      // Web3Forms configuration (client-side accessible)
-      web3FormsAccessKey1: process.env.NUXT_WEB3FORMS_ACCESS_KEY_1,
-      web3FormsAccessKey2: process.env.NUXT_WEB3FORMS_ACCESS_KEY_2,
-      contactEmail1: process.env.NUXT_CONTACT_EMAIL_1,
-      contactEmail2: process.env.NUXT_CONTACT_EMAIL_2
+      mediaBaseUrl: (process.env.NUXT_PUBLIC_MEDIA_BASE_URL || '').replace(/\/+$/, ''),
     }
   },
-  
+
   // Performance optimizations
   experimental: {
     payloadExtraction: false
   },
-
-
-  content: {
-    documentDriven: false,
-    markdown: {
-      toc: {
-        depth: 3,
-        searchDepth: 3
-      }
-    },
-    // Syntax highlighting configuration
-    highlight: {
-      theme: {
-        default: 'github-dark',
-        dark: 'github-dark',
-        light: 'github-light'
-      },
-      preload: ['typescript', 'javascript', 'python', 'bash', 'json', 'vue', 'html', 'css']
-    }
-  }
 })
