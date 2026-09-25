@@ -213,17 +213,17 @@ Source inventory (two SEPARATE Supabase projects):
 Structure: `scripts/migrate/` is its own package (`package.json` with `tsx`, `@supabase/supabase-js`,
 AWS SDK v3, `cloudinary`), config from `scripts/migrate/.env` (gitignored), outputs under
 `scripts/migrate/data/` (gitignored — contains visitor PII from `contact_messages`).
-- [ ] `export.ts --app <it|photo>`: read every table with the service key, paginated (1000 rows), write
+- [x] `export.ts --app <it|photo>`: read every table with the service key, paginated (1000 rows), write
       `data/<app>/<table>.json`; download every Supabase Storage object and every Cloudinary asset referenced
       by rows (or listed via Cloudinary Admin API) into `data/<app>/files/`. Read-only against the source.
-- [ ] `transform.ts`: pure functions per entity → items shaped per docs/data-model.md. Keep the original UUID
+- [x] `transform.ts`: pure functions per entity → items shaped per docs/data-model.md. Keep the original UUID
       as the item id (relations like `category_id` stay valid), timestamps → ISO 8601, drop nulls.
-- [ ] `upload-files.ts`: upload files to S3 (`photo/...`, `it/...`), write `data/<app>/url-map.json`
+- [x] `upload-files.ts`: upload files to S3 (`photo/...`, `it/...`), write `data/<app>/url-map.json`
       (old URL → CloudFront URL), and rewrite URLs in image fields AND inside blog markdown/HTML bodies.
-- [ ] `import.ts`: `BatchWriteItem` in chunks of 25 with retry on `UnprocessedItems`; deterministic keys so
+- [x] `import.ts`: `BatchWriteItem` in chunks of 25 with retry on `UnprocessedItems`; deterministic keys so
       re-runs overwrite instead of duplicating. `--dry-run` is the DEFAULT; real writes need `--apply`.
-- [ ] `verify.ts`: per-entity counts source vs DynamoDB, list any unrewritten old URLs (`supabase.co`, `cloudinary.com`).
-- [ ] Claude writes and dry-runs; the human runs `--apply`. Claude never prints row contents, only counts and key names.
+- [x] `verify.ts`: per-entity counts source vs DynamoDB, list any unrewritten old URLs (`supabase.co`, `cloudinary.com`).
+- [x] Claude writes and dry-runs; the human runs `--apply`. (first full run 2026-09-25: VERIFY OK both apps; re-run at cutover) Claude never prints row contents, only counts and key names.
 
 Phase 6 — go live
 - [ ] Push to GitHub; create both Amplify apps (Singapore), attach compute roles, set env vars.
