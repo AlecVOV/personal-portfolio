@@ -152,8 +152,9 @@ Amplify reserves names starting with `AWS`, so app variables use the `APP_` pref
 
 | Both apps | it-portfolio only | photography-portfolio only |
 |---|---|---|
-| `APP_REGION=ap-southeast-1` | `SES_FROM_EMAIL`, `CONTACT_TO_EMAIL` | — |
-| `APP_TABLE_NAME` | `NUXT_PUBLIC_SITE_URL`, `NUXT_SITE_NAME`, `NUXT_SITE_DESCRIPTION` | |
+| `APP_REGION=ap-southeast-1` | `NUXT_PUBLIC_SITE_URL`, `NUXT_SITE_NAME`, `NUXT_SITE_DESCRIPTION` | — |
+| `APP_TABLE_NAME` | | |
+| `SES_FROM_EMAIL`, `CONTACT_TO_EMAIL` (both = the SES-verified owner address while in sandbox) | | |
 | `APP_MEDIA_BUCKET`, `NUXT_PUBLIC_MEDIA_BASE_URL` (CloudFront URL) | | |
 | `NUXT_SESSION_PASSWORD` (≥32 chars), `APP_COGNITO_USER_POOL_ID`, `APP_COGNITO_CLIENT_ID` (per app), `APP_ADMIN_SUB` | | |
 
@@ -168,7 +169,9 @@ Each app has `.env.example` with names only.
    print only key names or line counts (e.g. `grep -oE '^[A-Z_]+=' .env`, `grep -ciE 'password|key|secret' file`).
    If a secret is ever printed, stop and tell the human which credential to rotate.
 3. Never run `aws cloudformation deploy`, `aws s3 rm`, `aws dynamodb delete-*`, or anything that creates cost or deletes data without the human explicitly saying so in this session. Read-only `aws ... describe/list/get` is fine.
-4. IAM least privilege: each compute role gets only its own table (+ its GSI) and its own S3 prefix; it-portfolio role also `ses:SendEmail` from the verified identity.
+4. IAM least privilege: each compute role gets only its own table (+ its GSI) and its own S3 prefix, plus
+   `ses:SendEmail` from the verified identity (both apps: contact-form notifications; the owner chose this for
+   photography-portfolio on 2026-09-25).
 5. One app per commit unless the change is repo-wide.
 6. Migrate photography-portfolio first (it already routes data through `server/api`), then it-portfolio.
 
@@ -187,12 +190,12 @@ Phase 2 — infra
 - [x] Validate template. Human deploys. (stack `portfolio-infra` deployed 2026-09-25)
 
 Phase 3 — photography-portfolio
-- [ ] `server/utils/{dynamo,s3,auth}.ts`; rewrite `server/api/*` on DynamoDB; add auth to all writes.
-- [ ] Replace Cloudinary with browser resize + presigned upload + `server/api/media/*` (list/delete by S3 prefix).
-- [ ] Replace Supabase auth with Cognito flow (see Auth); update `middleware/auth.ts` and admin pages.
-- [ ] Contact form → `server/api/contact.post.ts` (DynamoDB + SES) or keep as mailto; remove Web3Forms.
-- [ ] Remove `@nuxtjs/supabase`, `@supabase/supabase-js`, `@nuxt/content`, `better-sqlite3`, test pages.
-- [ ] `routeRules` caching; Amplify build passes locally.
+- [x] `server/utils/{dynamo,s3,auth}.ts`; rewrite `server/api/*` on DynamoDB; add auth to all writes.
+- [x] Replace Cloudinary with browser resize + presigned upload + `server/api/media/*` (list/delete by S3 prefix).
+- [x] Replace Supabase auth with Cognito flow (see Auth); update `middleware/auth.ts` and admin pages.
+- [x] Contact form → `server/api/contact.post.ts` (DynamoDB + SES) or keep as mailto; remove Web3Forms.
+- [x] Remove `@nuxtjs/supabase`, `@supabase/supabase-js`, `@nuxt/content`, `better-sqlite3`, test pages.
+- [x] `routeRules` caching; Amplify build passes locally.
 
 Phase 4 — it-portfolio
 - [ ] Move every client-side Supabase call (`useSupabaseData`, `useAdminCrud`, `useStorageUpload`, admin pages) behind new `server/api/*` routes on DynamoDB/S3.

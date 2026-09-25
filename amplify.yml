@@ -1,0 +1,32 @@
+version: 1
+applications:
+  - appRoot: apps/it-portfolio
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - nvm install 20 && nvm use 20
+            - npm ci
+        build:
+          commands:
+            - NITRO_PRESET=aws_amplify npm run build
+      artifacts:
+        baseDirectory: .amplify-hosting
+        files: ['**/*']
+      cache:
+        paths: ['node_modules/**/*']
+  - appRoot: apps/photography-portfolio
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - nvm install 20 && nvm use 20
+            - npm ci
+        build:
+          commands:
+            - NITRO_PRESET=aws_amplify npm run build
+      artifacts:
+        baseDirectory: .amplify-hosting
+        files: ['**/*']
+      cache:
+        paths: ['node_modules/**/*']

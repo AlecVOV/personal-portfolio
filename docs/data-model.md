@@ -38,7 +38,7 @@ Source: `server/api/*` routes, `components/Admin/*Editor.vue`, `pages/*`. Status
 | Blog post | `BLOG` | `POST#<id>` | `BLOG#PUBLISHED` when status=published and no deleted_at | `createdAt` | id, title, slug, content, excerpt, featured_image, status, deleted_at, category_id, category_name, category_slug |
 | Blog slug pointer | `BLOG` | `SLUG#<slug>` | — | — | id |
 | Testimonial | `TESTIMONIAL` | `T#<id>` | `TESTIMONIAL#PUBLISHED` when status=published | `createdAt` | id, name, role, avatar, rating, quote, status |
-| Contact message | `MESSAGE` | `MSG#<id>` | `MESSAGE` | `createdAt` | id, name, email, subject, message (only if the contact form moves to DynamoDB, decided in Phase 3) |
+| Contact message | `MESSAGE` | `MSG#<id>` | `MESSAGE` | `createdAt` | id, name, email, message (saved by `POST /api/contact`, which also emails the owner via SES) |
 
 Category name/slug are **denormalized** onto portfolio items and blog posts at write time (categories have no
 write route; they change only through the migration). If categories ever get an admin editor, its update route

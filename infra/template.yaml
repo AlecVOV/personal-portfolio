@@ -199,6 +199,13 @@ Resources:
                 Resource: !GetAtt MediaBucket.Arn
                 Condition:
                   StringLike: { 's3:prefix': ['photo/', 'photo/*'] }
+              # Contact form notification (owner chose email over admin-only storage, 2026-09-25)
+              - Sid: SendFromVerifiedIdentity
+                Effect: Allow
+                Action: ses:SendEmail
+                Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${OwnerEmail}
+                Condition:
+                  StringEquals: { 'ses:FromAddress': !Ref OwnerEmail }
 
   ItComputeRole:
     Type: AWS::IAM::Role
