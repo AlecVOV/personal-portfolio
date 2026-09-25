@@ -177,13 +177,13 @@ Each app has `.env.example` with names only.
 Phase 1 — repo
 - [x] Delete nested `.git`; rename folders to `apps/it-portfolio`, `apps/photography-portfolio`.
 - [x] Root `.gitignore`; `git init`; verify no `.env` is staged.
-- [ ] Move `apps/photography-portfolio/public/img for resize/` OUT of the repo (to a folder the human names) before the first commit; used later as Phase 5 upload source.
-- [ ] Replace the real Supabase URL + anon key in `apps/it-portfolio/supabase/sql_command.sql` with placeholders.
-- [ ] First commit + push.
+- [x] Move `apps/photography-portfolio/public/img for resize/` OUT of the repo (moved to `D:portfolio-originalsphotography`) before the first commit; used later as Phase 5 upload source.
+- [x] Replace the real Supabase URL + anon key in `apps/it-portfolio/supabase/sql_command.sql` with placeholders.
+- [x] First commit + push.
 
 Phase 2 — infra
-- [ ] Write `docs/data-model.md` (entities, PK/SK/GSI1 per access pattern) for both apps.
-- [ ] Write `infra/template.yaml`: 2 DynamoDB tables (on-demand, TTL attr `ttl`, PITR off), S3 bucket (private, block public access, CORS for PUT from both site domains + localhost, lifecycle rule), CloudFront + OAC (PriceClass_200 or PriceClass_All; pick the cheapest class that includes Singapore), 2 compute roles (trust `amplify.amazonaws.com`), SES email identity, Cognito user pool + 2 app clients. Outputs: table names, bucket, CloudFront domain, role ARNs, user pool ID, client IDs.
+- [x] Write `docs/data-model.md` (entities, PK/SK/GSI1 per access pattern) for both apps.
+- [x] Write `infra/template.yaml`: 2 DynamoDB tables (on-demand, TTL attr `ttl`, PITR off), S3 bucket (private, block public access, CORS for PUT from both site domains + localhost, lifecycle rule), CloudFront + OAC (PriceClass_200 or PriceClass_All; pick the cheapest class that includes Singapore), 2 compute roles (trust `amplify.amazonaws.com`), SES email identity, Cognito user pool + 2 app clients. Outputs: table names, bucket, CloudFront domain, role ARNs, user pool ID, client IDs.
 - [ ] Validate template. Human deploys.
 
 Phase 3 — photography-portfolio

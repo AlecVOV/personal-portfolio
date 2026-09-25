@@ -1,0 +1,345 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  personal-portfolio serverless infra (ap-southeast-1): DynamoDB x2 (on-demand), private S3 media bucket
+  behind CloudFront + OAC, Amplify compute roles x2, SES email identity, Cognito admin user pool.
+  See docs/data-model.md for the table design.
+
+Parameters:
+  OwnerEmail:
+    Type: String
+    Description: Owner address. SES identity (sender + only recipient while in sandbox).
+    AllowedPattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Default: http://localhost:3000
+    Description: >-
+      Site origins allowed to PUT to S3 with presigned URLs. Add the Amplify and custom domains
+      (e.g. https://main.xxxx.amplifyapp.com) in Phase 6 and redeploy.
+
+Resources:
+  # ── DynamoDB ─────────────────────────────────────────────────────────────
+  PhotoTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: portfolio-photo
+      BillingMode: PAY_PER_REQUEST
+      DeletionProtectionEnabled: true
+      AttributeDefinitions:
+        - { AttributeName: PK, AttributeType: S }
+        - { AttributeName: SK, AttributeType: S }
+        - { AttributeName: GSI1PK, AttributeType: S }
+        - { AttributeName: GSI1SK, AttributeType: S }
+      KeySchema:
+        - { AttributeName: PK, KeyType: HASH }
+        - { AttributeName: SK, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - { AttributeName: GSI1PK, KeyType: HASH }
+            - { AttributeName: GSI1SK, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      TimeToLiveSpecification: { AttributeName: ttl, Enabled: true }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: false }
+
+  ItTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: portfolio-it
+      BillingMode: PAY_PER_REQUEST
+      DeletionProtectionEnabled: true
+      AttributeDefinitions:
+        - { AttributeName: PK, AttributeType: S }
+        - { AttributeName: SK, AttributeType: S }
+        - { AttributeName: GSI1PK, AttributeType: S }
+        - { AttributeName: GSI1SK, AttributeType: S }
+      KeySchema:
+        - { AttributeName: PK, KeyType: HASH }
+        - { AttributeName: SK, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - { AttributeName: GSI1PK, KeyType: HASH }
+            - { AttributeName: GSI1SK, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      TimeToLiveSpecification: { AttributeName: ttl, Enabled: true }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: false }
+
+  # ── S3 media bucket (private) ────────────────────────────────────────────
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub portfolio-media-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [PUT]
+            AllowedOrigins: !Ref AllowedOrigins
+            AllowedHeaders: ['*']
+            MaxAge: 3000
+      LifecycleConfiguration:
+        Rules:
+          - Id: abort-incomplete-multipart-uploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 }
+
+  MediaOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-media-oac
+        Description: CloudFront access to the private portfolio media bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  MediaDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: portfolio media (photo/, it/)
+        # Cheapest price class whose edge locations include Singapore.
+        PriceClass: PriceClass_200
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        Origins:
+          - Id: media-s3
+            DomainName: !GetAtt MediaBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt MediaOAC.Id
+            S3OriginConfig: { OriginAccessIdentity: '' }
+        DefaultCacheBehavior:
+          TargetOriginId: media-s3
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          # Managed-CachingOptimized. Upload keys are unique, so long caching is safe.
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+  MediaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MediaBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontRead
+            Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub ${MediaBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${MediaDistribution}
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt MediaBucket.Arn
+              - !Sub ${MediaBucket.Arn}/*
+            Condition:
+              Bool: { 'aws:SecureTransport': 'false' }
+
+  # ── Amplify compute roles (SSR credentials; no access keys in env) ───────
+  PhotoComputeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: portfolio-photo-compute
+      Description: Amplify SSR compute role for photography-portfolio
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: photo-data
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: OwnTable
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:Query
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:ConditionCheckItem
+                Resource:
+                  - !GetAtt PhotoTable.Arn
+                  - !Sub ${PhotoTable.Arn}/index/GSI1
+              - Sid: OwnMediaPrefix
+                Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+                Resource: !Sub ${MediaBucket.Arn}/photo/*
+              - Sid: ListOwnMediaPrefix
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt MediaBucket.Arn
+                Condition:
+                  StringLike: { 's3:prefix': ['photo/', 'photo/*'] }
+
+  ItComputeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: portfolio-it-compute
+      Description: Amplify SSR compute role for it-portfolio
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: it-data
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: OwnTable
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:Query
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:ConditionCheckItem
+                Resource:
+                  - !GetAtt ItTable.Arn
+                  - !Sub ${ItTable.Arn}/index/GSI1
+              - Sid: OwnMediaPrefix
+                Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+                Resource: !Sub ${MediaBucket.Arn}/it/*
+              - Sid: ListOwnMediaPrefix
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt MediaBucket.Arn
+                Condition:
+                  StringLike: { 's3:prefix': ['it/', 'it/*'] }
+              - Sid: SendFromVerifiedIdentity
+                Effect: Allow
+                Action: ses:SendEmail
+                Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${OwnerEmail}
+                Condition:
+                  StringEquals: { 'ses:FromAddress': !Ref OwnerEmail }
+
+  # ── SES ──────────────────────────────────────────────────────────────────
+  # Creating this sends a verification email to OwnerEmail; the owner must click the link.
+  OwnerEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Ref OwnerEmail
+
+  # ── Cognito (admin login for both sites) ─────────────────────────────────
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: portfolio-admins
+      UserPoolTier: LITE
+      DeletionProtection: ACTIVE
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 14
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 3
+      MfaConfiguration: OPTIONAL
+      EnabledMfas: [SOFTWARE_TOKEN_MFA]
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - { Name: verified_email, Priority: 1 }
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      Description: Site administrators (both portfolios)
+      UserPoolId: !Ref UserPool
+
+  PhotoAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: photography-portfolio
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows: [ALLOW_USER_PASSWORD_AUTH, ALLOW_REFRESH_TOKEN_AUTH]
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 480
+      TokenValidityUnits: { AccessToken: minutes, IdToken: minutes, RefreshToken: minutes }
+
+  ItAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: it-portfolio
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows: [ALLOW_USER_PASSWORD_AUTH, ALLOW_REFRESH_TOKEN_AUTH]
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 480
+      TokenValidityUnits: { AccessToken: minutes, IdToken: minutes, RefreshToken: minutes }
+
+Outputs:
+  PhotoTableName:
+    Description: APP_TABLE_NAME for photography-portfolio
+    Value: !Ref PhotoTable
+  ItTableName:
+    Description: APP_TABLE_NAME for it-portfolio
+    Value: !Ref ItTable
+  MediaBucketName:
+    Description: APP_MEDIA_BUCKET for both apps
+    Value: !Ref MediaBucket
+  MediaBaseUrl:
+    Description: NUXT_PUBLIC_MEDIA_BASE_URL for both apps
+    Value: !Sub https://${MediaDistribution.DomainName}
+  PhotoComputeRoleArn:
+    Description: Attach in Amplify (photography-portfolio) → App settings → IAM roles → Compute role
+    Value: !GetAtt PhotoComputeRole.Arn
+  ItComputeRoleArn:
+    Description: Attach in Amplify (it-portfolio) → App settings → IAM roles → Compute role
+    Value: !GetAtt ItComputeRole.Arn
+  UserPoolId:
+    Description: APP_COGNITO_USER_POOL_ID for both apps
+    Value: !Ref UserPool
+  PhotoClientId:
+    Description: APP_COGNITO_CLIENT_ID for photography-portfolio
+    Value: !Ref PhotoAppClient
+  ItClientId:
+    Description: APP_COGNITO_CLIENT_ID for it-portfolio
+    Value: !Ref ItAppClient
