@@ -63,18 +63,8 @@
             </select>
           </div>
 
-          <!-- Featured Image URL -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Featured Image URL
-            </label>
-            <input
-              v-model="form.featured_image"
-              type="url"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-accent-500 focus:border-accent-500 dark:bg-gray-700 dark:text-white"
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
+          <!-- Featured Image -->
+          <AdminImageInput v-model="form.featured_image" label="Featured Image" />
 
           <!-- Excerpt -->
           <div>

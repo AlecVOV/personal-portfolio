@@ -1,18 +1,12 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
-  const supabase = useSupabase()
-  
-  // Check if user is authenticated
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  // If not authenticated and trying to access admin routes
-  if (!session && to.path.startsWith('/admin') && to.path !== '/admin/login') {
+// Admin pages are client-rendered (routeRules ssr: false); the API enforces auth independently.
+export default defineNuxtRouteMiddleware(async (to) => {
+  const { loggedIn, ready, fetch } = useUserSession()
+  if (!ready.value) await fetch()
+
+  if (!loggedIn.value && to.path.startsWith('/admin') && to.path !== '/admin/login') {
     return navigateTo('/admin/login')
   }
-  
-  // If authenticated and trying to access login page
-  if (session && to.path === '/admin/login') {
+  if (loggedIn.value && to.path === '/admin/login') {
     return navigateTo('/admin')
   }
 })
-
-

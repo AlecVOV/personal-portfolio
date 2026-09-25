@@ -4,15 +4,17 @@
       <div>
         <h1 class="text-2xl font-serif font-bold text-gray-900 dark:text-white">Media Library</h1>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Manage your Cloudinary images
+          Images are resized in your browser (max 2560px) and stored on AWS S3
         </p>
       </div>
       <button
-        @click="showUploadWidget"
-        class="btn-primary"
+        :disabled="uploading"
+        class="btn-primary disabled:opacity-50"
+        @click="fileInput?.click()"
       >
-        Upload Images
+        {{ uploading ? `Uploading ${progress}…` : 'Upload Images' }}
       </button>
+      <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="onFiles" />
     </div>
 
     <!-- Filter and Search -->
@@ -31,6 +33,8 @@
       </button>
     </div>
 
+    <p v-if="uploadError" class="mt-4 text-sm text-red-600">{{ uploadError }}</p>
+
     <!-- Loading State -->
     <div v-if="loading" class="mt-8 text-center">
       <p class="text-gray-500 dark:text-gray-400">Loading images...</p>
@@ -40,22 +44,23 @@
     <div v-else class="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       <div
         v-for="image in filteredImages"
-        :key="image.public_id"
+        :key="image.key"
         class="relative group bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden"
       >
         <!-- Image -->
         <div class="aspect-square relative overflow-hidden">
           <img
-            :src="image.secure_url"
-            :alt="image.public_id"
+            :src="image.thumbUrl"
+            :alt="image.name"
+            loading="lazy"
             class="w-full h-full object-cover"
           />
-          
+
           <!-- Overlay on Hover -->
           <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
             <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
               <button
-                @click="copyImageUrl(image.secure_url)"
+                @click="copyImageUrl(image.url)"
                 class="p-2 bg-white rounded-full hover:bg-gray-100"
                 title="Copy URL"
               >
@@ -64,7 +69,7 @@
                 </svg>
               </button>
               <button
-                @click="viewImage(image)"
+                @click="selectedImage = image"
                 class="p-2 bg-white rounded-full hover:bg-gray-100"
                 title="View Details"
               >
@@ -88,12 +93,8 @@
 
         <!-- Image Info -->
         <div class="p-3">
-          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {{ image.public_id.split('/').pop() }}
-          </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {{ formatFileSize(image.bytes) }} • {{ image.width }}x{{ image.height }}
-          </p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ image.name }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatFileSize(image.bytes) }}</p>
         </div>
       </div>
     </div>
@@ -125,28 +126,28 @@
               </svg>
             </button>
           </div>
-          
+
           <img
-            :src="selectedImage.secure_url"
-            :alt="selectedImage.public_id"
+            :src="selectedImage.url"
+            :alt="selectedImage.name"
             class="w-full rounded-lg mb-4"
           />
-          
+
           <div class="space-y-2 text-sm">
             <div>
-              <span class="font-medium text-gray-700 dark:text-gray-300">Public ID:</span>
-              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ selectedImage.public_id }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Key:</span>
+              <span class="ml-2 text-gray-600 dark:text-gray-400 break-all">{{ selectedImage.key }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">URL:</span>
               <div class="flex items-center gap-2 mt-1">
                 <input
-                  :value="selectedImage.secure_url"
+                  :value="selectedImage.url"
                   readonly
                   class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-sm"
                 />
                 <button
-                  @click="copyImageUrl(selectedImage.secure_url)"
+                  @click="copyImageUrl(selectedImage.url)"
                   class="px-3 py-2 bg-accent-500 text-white rounded-md hover:bg-accent-600"
                 >
                   Copy
@@ -154,20 +155,16 @@
               </div>
             </div>
             <div>
-              <span class="font-medium text-gray-700 dark:text-gray-300">Dimensions:</span>
-              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ selectedImage.width }}x{{ selectedImage.height }}</span>
-            </div>
-            <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Size:</span>
               <span class="ml-2 text-gray-600 dark:text-gray-400">{{ formatFileSize(selectedImage.bytes) }}</span>
             </div>
             <div>
               <span class="font-medium text-gray-700 dark:text-gray-300">Format:</span>
-              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ selectedImage.format }}</span>
+              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ selectedImage.name.split('.').pop() }}</span>
             </div>
             <div>
-              <span class="font-medium text-gray-700 dark:text-gray-300">Created:</span>
-              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ formatDate(selectedImage.created_at) }}</span>
+              <span class="font-medium text-gray-700 dark:text-gray-300">Uploaded:</span>
+              <span class="ml-2 text-gray-600 dark:text-gray-400">{{ formatDate(selectedImage.lastModified) }}</span>
             </div>
           </div>
         </div>
@@ -186,19 +183,22 @@ const images = ref([])
 const loading = ref(false)
 const searchQuery = ref('')
 const selectedImage = ref(null)
+const fileInput = ref(null)
+const progress = ref('')
+const uploadError = ref('')
+const { upload, uploading } = useImageUpload()
 
 const filteredImages = computed(() => {
   if (!searchQuery.value) return images.value
-  return images.value.filter(img => 
-    img.public_id.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return images.value.filter(img =>
+    img.key.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
 const fetchImages = async () => {
   loading.value = true
   try {
-    const data = await $fetch('/api/cloudinary/images')
-    images.value = data.resources || []
+    images.value = await $fetch('/api/media')
   } catch (error) {
     console.error('Failed to fetch images:', error)
     alert('Failed to fetch images')
@@ -207,48 +207,22 @@ const fetchImages = async () => {
   }
 }
 
-const showUploadWidget = () => {
-  if (!window.cloudinary) {
-    console.error('Cloudinary widget not loaded')
-    return
-  }
-
-  window.cloudinary.openUploadWidget(
-    {
-      cloudName: useRuntimeConfig().public.cloudinaryCloudName,
-      uploadPreset: useRuntimeConfig().public.cloudinaryUploadPreset,
-      sources: ['local', 'url', 'camera'],
-      multiple: true,
-      maxFiles: 10,
-      folder: 'portfolio',
-      // Add automatic WebP conversion
-      // transformation: [
-      //   {
-      //     fetch_format: 'auto',
-      //     quality: 'auto:good'
-      //   }
-      // ],
-      // Or force WebP conversion
-      transformation: [
-        {
-          format: 'webp',
-          quality: 'auto:good'
-        }
-      ],
-      clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'],
-      maxFileSize: 10000000, // 10MB
-      maxImageWidth: 3000,
-      maxImageHeight: 3000
-    },
-    (error, result) => {
-      if (!error && result && result.event === 'success') {
-        console.log('Upload successful:', result.info)
-        // The image URL will already be in WebP format
-        console.log('WebP URL:', result.info.secure_url)
-        fetchImages()
-      }
+const onFiles = async (event) => {
+  const files = [...(event.target.files || [])]
+  event.target.value = ''
+  uploadError.value = ''
+  const failed = []
+  for (const [i, file] of files.entries()) {
+    progress.value = `${i + 1}/${files.length}`
+    try {
+      await upload(file)
+    } catch (error) {
+      failed.push(`${file.name}: ${error?.data?.message || error?.message || 'failed'}`)
     }
-  )
+  }
+  progress.value = ''
+  if (failed.length) uploadError.value = failed.join(' · ')
+  await fetchImages()
 }
 
 const copyImageUrl = async (url) => {
@@ -260,20 +234,15 @@ const copyImageUrl = async (url) => {
   }
 }
 
-const viewImage = (image) => {
-  selectedImage.value = image
-}
-
 const deleteImage = async (image) => {
-  if (!confirm(`Delete ${image.public_id}?`)) return
+  if (!confirm(`Delete ${image.name}? Pages still using this URL will show a broken image.`)) return
 
   try {
-    await $fetch('/api/cloudinary/delete', {
+    await $fetch('/api/media', {
       method: 'DELETE',
-      body: { public_id: image.public_id }
+      body: { key: image.key }
     })
     await fetchImages()
-    alert('Image deleted successfully')
   } catch (error) {
     console.error('Failed to delete:', error)
     alert('Failed to delete image')
@@ -281,7 +250,7 @@ const deleteImage = async (image) => {
 }
 
 const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes'
+  if (!bytes) return '0 Bytes'
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -298,16 +267,5 @@ const formatDate = (dateString) => {
   })
 }
 
-onMounted(() => {
-  fetchImages()
-  
-  // Load Cloudinary Upload Widget
-  if (!document.getElementById('cloudinary-upload-widget')) {
-    const script = document.createElement('script')
-    script.id = 'cloudinary-upload-widget'
-    script.src = 'https://upload-widget.cloudinary.com/global/all.js'
-    script.async = true
-    document.head.appendChild(script)
-  }
-})
+onMounted(fetchImages)
 </script>

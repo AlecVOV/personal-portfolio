@@ -47,22 +47,8 @@
             />
           </div>
 
-          <!-- Avatar URL -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Avatar URL
-            </label>
-            <input
-              v-model="form.avatar"
-              type="url"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-accent-500 focus:border-accent-500 dark:bg-gray-700 dark:text-white"
-              placeholder="https://example.com/avatar.jpg"
-            />
-            <!-- Avatar Preview -->
-            <div v-if="form.avatar" class="mt-2">
-              <img :src="form.avatar" alt="Avatar preview" class="w-16 h-16 rounded-full object-cover" />
-            </div>
-          </div>
+          <!-- Avatar -->
+          <AdminImageInput v-model="form.avatar" label="Avatar" preview-class="w-16 h-16 rounded-full object-cover" />
 
           <!-- Rating -->
           <div>

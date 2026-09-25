@@ -1,19 +1,2 @@
-import { serverSupabaseServiceRole } from '#supabase/server'
-
-export default defineEventHandler(async (event) => {
-  const client = serverSupabaseServiceRole(event)
-  
-  const { data, error } = await client
-    .from('testimonials')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    throw createError({
-      statusCode: 500,
-      message: error.message
-    })
-  }
-
-  return data
-})
+// Public: published testimonials, newest first. One Query on the sparse GSI1.
+export default defineEventHandler(async () => (await dbPublished(PUBLISHED.testimonial)).map(toApi))

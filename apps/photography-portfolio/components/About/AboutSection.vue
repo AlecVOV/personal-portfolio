@@ -58,7 +58,7 @@
       >
         <div class="relative">
           <img 
-            src="https://res.cloudinary.com/dqved9nx9/image/upload/v1754670214/IMG_20250201_011838_988_ecfzaf.webp" 
+            :src="mediaUrl('photo/legacy/dqved9nx9/IMG_20250201_011838_988_ecfzaf.webp')" 
             alt="Photographer portrait" 
             class="w-full rounded-sm shadow-lg"
           />
@@ -70,3 +70,6 @@
     </div>
   </div>
 </template>
+<script setup>
+const mediaUrl = useMediaUrl()
+</script>

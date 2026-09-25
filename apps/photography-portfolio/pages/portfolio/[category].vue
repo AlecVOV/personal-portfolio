@@ -31,6 +31,7 @@
 </template>
 
 <script setup>
+const mediaUrl = useMediaUrl()
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -56,7 +57,7 @@ const photos = [
     id: 1,
     title: 'Sunlife A Morning',
     category: 'landscape',
-    image: 'https://res.cloudinary.com/dqved9nx9/image/upload/v1754670870/IMGP7520_jkgeof.jpg',
+    image: mediaUrl('photo/legacy/dqved9nx9/IMGP7520_jkgeof.jpg'),
     description: 'Capturing the Sunlife pantroma during a serene morning.'
   },
 ];

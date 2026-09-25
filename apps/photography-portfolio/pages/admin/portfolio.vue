@@ -140,7 +140,7 @@ const filteredItems = computed(() => {
 })
 
 const fetchItems = async () => {
-  const data = await $fetch('/api/portfolio')
+  const data = await $fetch('/api/admin/portfolio')
   items.value = data
 }
 

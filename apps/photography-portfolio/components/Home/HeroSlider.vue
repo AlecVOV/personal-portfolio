@@ -55,22 +55,23 @@
 </template>
 
 <script setup>
+const mediaUrl = useMediaUrl()
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 const slides = [
   {
     id: 1,
-    image: 'https://res.cloudinary.com/dqved9nx9/image/upload/v1754670236/20250430_213049_lvsf7j.jpg',
+    image: mediaUrl('photo/legacy/dqved9nx9/20250430_213049_lvsf7j.jpg'),
     alt: 'Independence Palace at night for the 50th anniversary of National Reunification Day (April 30th)'
   },
   {
     id: 2,
-    image: 'https://res.cloudinary.com/dqved9nx9/image/upload/v1754670220/20250318_182230_onfyvq.jpg',
+    image: mediaUrl('photo/legacy/dqved9nx9/20250318_182230_onfyvq.jpg'),
     alt: 'Swinburne Afterglow'
   },
   {
     id: 3,
-    image: 'https://res.cloudinary.com/dqved9nx9/image/upload/v1754670272/DSC06525_adepzy.jpg',
+    image: mediaUrl('photo/legacy/dqved9nx9/DSC06525_adepzy.jpg'),
     alt: 'A Mentro Corner in the noon'
   }
 ];

@@ -1,26 +1,17 @@
-import { serverSupabaseServiceRole } from '#supabase/server'
-
+// Soft delete: moves the post to the trash; DynamoDB TTL removes it (and its slug pointer)
+// after BLOG_TRASH_DAYS unless it is restored with toggle-status.
 export default defineEventHandler(async (event) => {
-  const client = serverSupabaseServiceRole(event)
-  const id = getRouterParam(event, 'id')
+  await requireAdmin(event)
+  const id = routeId(event)
+  const current = await dbGet(keys.post(id).PK, keys.post(id).SK)
+  if (!current) throw createError({ statusCode: 404, message: 'Not found' })
 
-  // Soft delete: set status to 'deleted' and add deleted_at timestamp
-  const { data, error } = await client
-    .from('blog_posts')
-    .update({
-      status: 'deleted',
-      deleted_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) {
-    throw createError({
-      statusCode: 500,
-      message: error.message
-    })
-  }
-
-  return data
+  const now = nowIso()
+  const ttl = Math.floor(Date.now() / 1000) + BLOG_TRASH_DAYS * 24 * 60 * 60
+  const post = withPublished<DbItem>({ ...current, status: 'deleted', deleted_at: now, ttl, updatedAt: now }, PUBLISHED.blog, false)
+  await dbTransact([
+    { put: post },
+    { put: { ...keys.slug(post.slug), type: 'slug', id, createdAt: current.createdAt, updatedAt: now, ttl } },
+  ])
+  return toApi(post)
 })

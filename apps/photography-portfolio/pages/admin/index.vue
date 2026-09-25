@@ -115,8 +115,6 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const supabase = useSupabase()
-
 const stats = ref({
   totalPosts: 0,
   totalPortfolio: 0,
@@ -126,18 +124,6 @@ const stats = ref({
 
 // Fetch stats on mount
 onMounted(async () => {
-  const [posts, portfolio, testimonials, analytics] = await Promise.all([
-    supabase.from('blog_posts').select('id', { count: 'exact', head: true }),
-    supabase.from('portfolio_items').select('id', { count: 'exact', head: true }),
-    supabase.from('testimonials').select('id', { count: 'exact', head: true }),
-    supabase.from('analytics_events').select('id', { count: 'exact', head: true })
-  ])
-
-  stats.value = {
-    totalPosts: posts.count || 0,
-    totalPortfolio: portfolio.count || 0,
-    totalTestimonials: testimonials.count || 0,
-    totalViews: analytics.count || 0
-  }
+  stats.value = await $fetch('/api/admin/stats')
 })
 </script>

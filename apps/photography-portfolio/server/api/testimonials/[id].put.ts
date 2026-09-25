@@ -1,23 +1,14 @@
-import { serverSupabaseServiceRole } from '#supabase/server'
-
+// Partial update (the admin list also uses this to toggle status).
 export default defineEventHandler(async (event) => {
-  const client = serverSupabaseServiceRole(event)
-  const id = getRouterParam(event, 'id')
-  const body = await readBody(event)
+  await requireAdmin(event)
+  const id = routeId(event)
+  const fields = testimonialFields(await readObject(event), true)
+  const { PK, SK } = keys.testimonial(id)
+  const current = await dbGet(PK, SK)
+  if (!current) throw createError({ statusCode: 404, message: 'Not found' })
 
-  const { data, error } = await client
-    .from('testimonials')
-    .update(body)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) {
-    throw createError({
-      statusCode: 500,
-      message: error.message
-    })
-  }
-
-  return data
+  const merged: DbItem = { ...current, ...fields, updatedAt: nowIso() }
+  const item = withPublished(merged, PUBLISHED.testimonial, merged.status === 'published')
+  await dbPut(item, 'replace')
+  return toApi(item)
 })

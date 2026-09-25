@@ -1,27 +1,13 @@
-import { serverSupabaseServiceRole } from '#supabase/server'
-
 export default defineEventHandler(async (event) => {
-  const client = serverSupabaseServiceRole(event)
-  const body = await readBody(event)
-
-  const { data, error } = await client
-    .from('portfolio_items')
-    .insert({
-      title: body.title,
-      category_id: body.category_id,
-      image: body.image,
-      description: body.description || null,
-      status: body.status || 'published'
-    })
-    .select()
-    .single()
-
-  if (error) {
-    throw createError({
-      statusCode: 500,
-      message: error.message
-    })
-  }
-
-  return data
+  await requireAdmin(event)
+  const fields = portfolioFields(await readObject(event))
+  const id = crypto.randomUUID()
+  const now = nowIso()
+  const item = withPublished({
+    ...keys.portfolio(id), type: 'portfolioItem', id,
+    ...fields, ...await categoryAttrs(fields.category_id as string),
+    createdAt: now, updatedAt: now,
+  }, PUBLISHED.portfolio, fields.status === 'published')
+  await dbPut(item, 'create')
+  return toApi(item)
 })

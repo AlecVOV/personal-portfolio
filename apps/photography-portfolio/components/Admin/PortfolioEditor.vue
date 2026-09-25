@@ -50,23 +50,8 @@
             </select>
           </div>
 
-          <!-- Image URL -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Image URL *
-            </label>
-            <input
-              v-model="form.image"
-              type="url"
-              required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-accent-500 focus:border-accent-500 dark:bg-gray-700 dark:text-white"
-              placeholder="https://example.com/image.jpg"
-            />
-            <!-- Image Preview -->
-            <div v-if="form.image" class="mt-2">
-              <img :src="form.image" alt="Preview" class="w-full h-48 object-cover rounded-md" />
-            </div>
-          </div>
+          <!-- Image -->
+          <AdminImageInput v-model="form.image" label="Image" required />
 
           <!-- Description -->
           <div>

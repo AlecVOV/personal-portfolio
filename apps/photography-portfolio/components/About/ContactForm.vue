@@ -60,9 +60,6 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-const {
-  public: { web3formsKey1, web3formsKey2 }
-} = useRuntimeConfig();
 
 const form = reactive({
   name: '',
@@ -82,60 +79,17 @@ const submitForm = async () => {
   isSubmitting.value = true;
 
   try {
-    if (!web3formsKey1 && !web3formsKey2) {
-      throw new Error('Missing Web3Forms keys. Please set NUXT_PUBLIC_WEB3FORMS_KEY1 and/or NUXT_PUBLIC_WEB3FORMS_KEY2.');
-    }
-
     // Basic front-end validation
     if (!form.name || !form.email || !form.message) {
       throw new Error('Please fill in your name, email, and message.');
     }
 
-    // Build payload
-    const basePayload = {
-      name: form.name,
-      email: form.email,
-      message: form.message,
-      subject: `New Inquiry${form.service ? ' - ' + form.service : ''} (LensCraft)`
-    };
-
-  const requests = [];
-    const endpoint = 'https://api.web3forms.com/submit';
-
-    if (web3formsKey1) {
-      requests.push(
-        fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json'
-          },
-          body: JSON.stringify({ access_key: web3formsKey1, ...basePayload })
-        })
-      );
-    }
-    if (web3formsKey2) {
-      requests.push(
-        fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json'
-          },
-          body: JSON.stringify({ access_key: web3formsKey2, ...basePayload })
-        })
-      );
-    }
-
-    const responses = await Promise.allSettled(requests);
-    const jsons = await Promise.all(
-      responses.map(async (r) => (r.status === 'fulfilled' ? r.value.json().catch(() => ({})) : {}))
-    );
-
-  const anySuccess = jsons.some((j) => j && j.success);
-    if (!anySuccess) {
-      throw new Error('Failed to send your message. Please try again later.');
-    }
+    await $fetch('/api/contact', {
+      method: 'POST',
+      body: { name: form.name, email: form.email, message: form.message, botcheck: form.botcheck }
+    }).catch((err) => {
+      throw new Error(err?.data?.message || 'Failed to send your message. Please try again later.');
+    });
 
     // Reset form on success
     form.name = '';

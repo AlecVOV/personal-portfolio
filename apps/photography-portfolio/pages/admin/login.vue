@@ -15,7 +15,35 @@
           <p class="text-sm text-red-800 dark:text-red-200">{{ errorMessage }}</p>
         </div>
 
-        <div class="rounded-md shadow-sm -space-y-px">
+        <div v-if="challenge === 'SOFTWARE_TOKEN_MFA'">
+          <label for="code" class="block text-sm text-gray-700 dark:text-gray-300 mb-2">Code from your authenticator app</label>
+          <input
+            id="code"
+            v-model="code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            required
+            class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-accent-500 focus:border-accent-500 sm:text-sm dark:bg-gray-800"
+            placeholder="123456"
+          />
+        </div>
+
+        <div v-else-if="challenge === 'NEW_PASSWORD_REQUIRED'">
+          <label for="new-password" class="block text-sm text-gray-700 dark:text-gray-300 mb-2">Choose a new password</label>
+          <input
+            id="new-password"
+            v-model="newPassword"
+            type="password"
+            autocomplete="new-password"
+            required
+            class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-accent-500 focus:border-accent-500 sm:text-sm dark:bg-gray-800"
+            placeholder="New password"
+          />
+        </div>
+
+        <div v-else class="rounded-md shadow-sm -space-y-px">
           <div>
             <label for="email" class="sr-only">Email address</label>
             <input
@@ -65,21 +93,32 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const { signIn, loading } = useAuth()
+const { signIn, answerChallenge, loading } = useAuth()
 
 const email = ref('')
 const password = ref('')
+const code = ref('')
+const newPassword = ref('')
+const challenge = ref(null)
 const errorMessage = ref('')
 
 const handleLogin = async () => {
   errorMessage.value = ''
-  
-  const { success, error } = await signIn(email.value, password.value)
-  
-  if (success) {
+
+  const result = challenge.value
+    ? await answerChallenge({ code: code.value || undefined, newPassword: newPassword.value || undefined })
+    : await signIn(email.value, password.value)
+  password.value = ''
+
+  if (result.success) {
     await navigateTo('/admin')
+  } else if (result.challenge) {
+    challenge.value = result.challenge
+    code.value = ''
+    newPassword.value = ''
   } else {
-    errorMessage.value = error || 'Invalid email or password'
+    if (/timed out/i.test(result.error || '')) challenge.value = null
+    errorMessage.value = result.error || 'Invalid email or password'
   }
 }
 </script>

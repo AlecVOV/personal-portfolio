@@ -82,24 +82,25 @@
 </template>
 
 <script setup>
+const mediaUrl = useMediaUrl()
 const featuredWork = [
   {
     id: 1,
     title: 'Sunlife A Morning',
     category: 'landscape',
-    image: 'https://res.cloudinary.com/dqved9nx9/image/upload/v1754670870/IMGP7520_jkgeof.jpg'
+    image: mediaUrl('photo/legacy/dqved9nx9/IMGP7520_jkgeof.jpg')
   },
   {
     id: 2,
     title: 'AWS Food',
     category: 'documentary',
-    image: 'https://res.cloudinary.com/de3zaxyzj/image/upload/v1766720915/widget-uploads/DSC08090_idshlw.jpg'
+    image: mediaUrl('photo/legacy/de3zaxyzj/widget-uploads/DSC08090_idshlw.jpg')
   },
   {
     id: 3,
     title: 'My Love',
     category: 'portrait',
-    image: 'https://res.cloudinary.com/de3zaxyzj/image/upload/v1766721828/widget-uploads/DSC08650_s846hc.jpg'
+    image: mediaUrl('photo/legacy/de3zaxyzj/widget-uploads/DSC08650_s846hc.jpg')
   }
 ];
 

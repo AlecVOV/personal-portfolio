@@ -1,61 +1,35 @@
+// Admin auth via server routes (Cognito behind /api/auth/*). The browser only ever sees the
+// sealed session cookie; useUserSession() exposes { sub, email, exp }.
+type SignInResult = { success: true } | { success: false, challenge?: string, error?: string }
+
 export const useAuth = () => {
-  const supabase = useSupabase()
-  const user = useState('user', () => null)
+  const { loggedIn, user, fetch: refreshSession, clear } = useUserSession()
   const loading = useState('authLoading', () => false)
 
-  // Sign in with email and password
-  const signIn = async (email: string, password: string) => {
+  const run = async (url: string, body: Record<string, unknown>): Promise<SignInResult> => {
     loading.value = true
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      
-      if (error) throw error
-      
-      user.value = data.user
-      return { success: true, data }
+      const res = await $fetch<{ ok?: true, challenge?: string }>(url, { method: 'POST', body })
+      if (res.ok) {
+        await refreshSession()
+        return { success: true }
+      }
+      return { success: false, challenge: res.challenge }
     } catch (error: any) {
-      return { success: false, error: error.message }
+      return { success: false, error: error?.data?.message || 'Sign-in failed' }
     } finally {
       loading.value = false
     }
   }
 
-  // Sign out
+  const signIn = (email: string, password: string) => run('/api/auth/login', { email, password })
+  const answerChallenge = (answer: { code?: string, newPassword?: string }) => run('/api/auth/challenge', answer)
+
   const signOut = async () => {
-    loading.value = true
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      
-      user.value = null
-      await navigateTo('/admin/login')
-      return { success: true }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    } finally {
-      loading.value = false
-    }
+    await $fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    await clear()
+    await navigateTo('/admin/login')
   }
 
-  // Get current user
-  const getCurrentUser = async () => {
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
-    user.value = currentUser
-    return currentUser
-  }
-
-  // Check if user is authenticated
-  const isAuthenticated = computed(() => !!user.value)
-
-  return {
-    user,
-    loading,
-    signIn,
-    signOut,
-    getCurrentUser,
-    isAuthenticated,
-  }
+  return { user, loading, isAuthenticated: loggedIn, signIn, answerChallenge, signOut }
 }

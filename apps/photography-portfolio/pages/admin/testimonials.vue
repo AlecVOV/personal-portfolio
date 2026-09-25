@@ -162,7 +162,7 @@ const filteredTestimonials = computed(() => {
 })
 
 const fetchTestimonials = async () => {
-  const data = await $fetch('/api/testimonials')
+  const data = await $fetch('/api/admin/testimonials')
   testimonials.value = data
 }
 

@@ -150,7 +150,7 @@ const filteredPosts = computed(() => {
 })
 
 const fetchPosts = async () => {
-  const data = await $fetch('/api/blog')
+  const data = await $fetch('/api/admin/blog')
   posts.value = data
 }
 

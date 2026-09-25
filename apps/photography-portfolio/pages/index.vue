@@ -120,7 +120,7 @@
             :visibleOnce="{ opacity: 1, x: 0, transition: { duration: 800 } }"
           >
             <img 
-              src="https://res.cloudinary.com/dqved9nx9/image/upload/v1754670215/IMG_20250201_011838_741_qvmd1d.webp" 
+              :src="mediaUrl('photo/legacy/dqved9nx9/IMG_20250201_011838_741_qvmd1d.webp')" 
               alt="My portrait" 
               class="w-full h-auto rounded-sm shadow-lg"
             />
@@ -132,6 +132,7 @@
 </template>
 
 <script setup>
+const mediaUrl = useMediaUrl()
 definePageMeta({
   layout: 'default'
 });
