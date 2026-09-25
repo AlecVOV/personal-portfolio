@@ -184,7 +184,7 @@ Phase 1 — repo
 Phase 2 — infra
 - [x] Write `docs/data-model.md` (entities, PK/SK/GSI1 per access pattern) for both apps.
 - [x] Write `infra/template.yaml`: 2 DynamoDB tables (on-demand, TTL attr `ttl`, PITR off), S3 bucket (private, block public access, CORS for PUT from both site domains + localhost, lifecycle rule), CloudFront + OAC (PriceClass_200 or PriceClass_All; pick the cheapest class that includes Singapore), 2 compute roles (trust `amplify.amazonaws.com`), SES email identity, Cognito user pool + 2 app clients. Outputs: table names, bucket, CloudFront domain, role ARNs, user pool ID, client IDs.
-- [ ] Validate template. Human deploys.
+- [x] Validate template. Human deploys. (stack `portfolio-infra` deployed 2026-09-25)
 
 Phase 3 — photography-portfolio
 - [ ] `server/utils/{dynamo,s3,auth}.ts`; rewrite `server/api/*` on DynamoDB; add auth to all writes.

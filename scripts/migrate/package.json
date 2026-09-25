@@ -1,0 +1,30 @@
+{
+  "name": "portfolio-migrate",
+  "private": true,
+  "type": "module",
+  "description": "One-off migration: Supabase + Cloudinary -> DynamoDB + S3. See CLAUDE.md Phase 5.",
+  "scripts": {
+    "export": "tsx export.ts",
+    "transform": "tsx transform.ts",
+    "upload-files": "tsx upload-files.ts",
+    "import": "tsx import.ts",
+    "verify": "tsx verify.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1140.0",
+    "@aws-sdk/client-s3": "^3.1140.0",
+    "@aws-sdk/lib-dynamodb": "^3.1140.0",
+    "@supabase/supabase-js": "^2.117.2",
+    "cloudinary": "^2.11.0",
+    "dotenv": "^18.0.3",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  }
+}
