@@ -198,11 +198,11 @@ Phase 3 — photography-portfolio
 - [x] `routeRules` caching; Amplify build passes locally.
 
 Phase 4 — it-portfolio
-- [ ] Move every client-side Supabase call (`useSupabaseData`, `useAdminCrud`, `useStorageUpload`, admin pages) behind new `server/api/*` routes on DynamoDB/S3.
-- [ ] Auth via Cognito flow (see Auth); `middleware/admin-auth.ts` updated.
-- [ ] Contact form + `messages` admin page on DynamoDB; `send-reply` via SES with auth + escaping; remove Resend and Web3Forms.
-- [ ] Remove `@nuxtjs/supabase`, `resend`, stray `content:` block in `nuxt.config.ts`.
-- [ ] `routeRules` caching; Amplify build passes locally.
+- [x] Move every client-side Supabase call (`useSupabaseData`, `useAdminCrud`, `useStorageUpload`, admin pages) behind new `server/api/*` routes on DynamoDB/S3.
+- [x] Auth via Cognito flow (see Auth); `middleware/admin-auth.ts` updated.
+- [x] Contact form + `messages` admin page on DynamoDB; `send-reply` via SES with auth + escaping; remove Resend and Web3Forms.
+- [x] Remove `@nuxtjs/supabase`, `resend`, stray `content:` block in `nuxt.config.ts`.
+- [x] `routeRules` caching; Amplify build passes locally.
 
 Phase 5 — data migration (one-off, `scripts/migrate/`). Run right after Phase 2 so Phases 3–4 are built
 against real data; re-run at cutover to pick up anything new.
