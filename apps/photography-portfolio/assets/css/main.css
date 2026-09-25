@@ -1,0 +1,138 @@
+/* stylelint-disable-next-line at-rule-no-unknown */
+@tailwind base;
+/* stylelint-disable-next-line at-rule-no-unknown */
+@tailwind components;
+/* stylelint-disable-next-line at-rule-no-unknown */
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-white dark:bg-primary-900 text-primary-800 dark:text-primary-100 font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif leading-tight;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl lg:text-4xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl lg:text-3xl;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+
+  /* Enable hardware acceleration for smooth animations */
+  * {
+    @apply transition-colors duration-300 ease-out;
+  }
+}
+
+@layer components {
+  .container-custom {
+    @apply container mx-auto px-4 md:px-6 lg:px-8;
+  }
+
+  /* Simplified button base styles with consistent hover effects */
+  .btn {
+    @apply px-4 py-2 rounded-sm font-medium;
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .btn:hover {
+    @apply transform scale-105;
+  }
+
+  .btn:active {
+    transform: scale(1.02);
+  }
+
+  .btn-primary {
+    @apply bg-primary-800 text-white hover:bg-primary-700 dark:bg-accent-600 dark:hover:bg-accent-500 dark:text-primary-900;
+    @apply border-0 outline-none;
+    @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent-600 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500;
+  }
+
+  .btn-outline {
+    @apply border border-primary-800 text-primary-800 hover:bg-primary-800 hover:text-white dark:border-accent-600 dark:text-accent-600 dark:hover:bg-accent-600 dark:hover:text-primary-900;
+  }
+
+  .section {
+    @apply py-16 md:py-24;
+  }
+
+  .section-title {
+    @apply font-serif text-3xl md:text-4xl mb-8 md:mb-12;
+  }
+
+  /* Simplified image hover effects */
+  .gallery-img-container {
+    @apply overflow-hidden relative;
+  }
+
+  .gallery-img {
+    @apply w-full h-full object-cover;
+  }
+
+  /* Simplified card hover animations */
+  .card {
+    @apply shadow-md;
+  }
+
+  /* Navigation hover effects with consistent scale and color transition */
+  .nav-link {
+    @apply relative overflow-hidden transition-all duration-200 ease-out;
+  }
+
+  .nav-link:hover {
+    @apply transform scale-105;
+  }
+
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-current;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+
+  /* Simplified loading animation */
+  .loading-simple {
+    @apply opacity-50;
+  }
+}
+
+/* Removed complex keyframe animations - replaced with utility classes */
+
+/* Simplified page transitions - moved to animations.css */
+
+/* Responsive animation preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

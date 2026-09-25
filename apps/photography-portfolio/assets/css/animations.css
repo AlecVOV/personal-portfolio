@@ -1,0 +1,405 @@
+/* Optimized Animation Utility System */
+/* Performance-first animations with consistent timing and easing */
+
+/* ===== CORE ANIMATION UTILITIES ===== */
+
+/* Essential fade animations - single property (opacity) */
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 400ms ease-out forwards;
+}
+
+.fade-out {
+  opacity: 1;
+  animation: fadeOut 300ms ease-out forwards;
+}
+
+/* Essential slide animations - single property (transform) */
+.slide-up {
+  transform: translateY(20px);
+  opacity: 0;
+  animation: slideUp 500ms ease-out forwards;
+}
+
+.slide-down {
+  transform: translateY(-20px);
+  opacity: 0;
+  animation: slideDown 500ms ease-out forwards;
+}
+
+.slide-left {
+  transform: translateX(20px);
+  opacity: 0;
+  animation: slideLeft 500ms ease-out forwards;
+}
+
+.slide-right {
+  transform: translateX(-20px);
+  opacity: 0;
+  animation: slideRight 500ms ease-out forwards;
+}
+
+/* ===== HOVER EFFECTS - SIMPLIFIED ===== */
+
+/* Standard hover scale - single property with consistent scale(1.05) maximum */
+.hover-scale {
+  transition: transform 200ms ease-out, color 200ms ease-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-scale-sm {
+  transition: transform 200ms ease-out, color 200ms ease-out;
+}
+
+.hover-scale-sm:hover {
+  transform: scale(1.05);
+}
+
+.hover-scale-lg {
+  transition: transform 200ms ease-out, color 200ms ease-out;
+}
+
+.hover-scale-lg:hover {
+  transform: scale(1.05);
+}
+
+/* Navigation underline effect - single property with color transition */
+.nav-underline {
+  position: relative;
+  transition: color 200ms ease-out, transform 200ms ease-out;
+}
+
+.nav-underline:hover {
+  transform: scale(1.05);
+}
+
+.nav-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: currentColor;
+  transition: width 300ms ease-out;
+}
+
+.nav-underline:hover::after {
+  width: 100%;
+}
+
+/* Button hover effects - simplified with consistent scale(1.05) and color transition */
+.btn-hover {
+  transition: transform 200ms ease-out, color 200ms ease-out, background-color 200ms ease-out;
+}
+
+.btn-hover:hover {
+  transform: scale(1.05);
+}
+
+.btn-hover:active {
+  transform: scale(1.02);
+}
+
+/* ===== LOADING ANIMATIONS ===== */
+
+/* Simple pulse for loading states */
+.pulse-simple {
+  animation: pulseSimple 2s ease-in-out infinite;
+}
+
+/* Minimal spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-left-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ===== PAGE TRANSITIONS - OPTIMIZED ===== */
+
+/* Simple page transitions - opacity only */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 400ms ease-out;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+}
+
+/* ===== HERO SLIDER TRANSITIONS ===== */
+
+/* Simplified crossfade transition for hero slider */
+.crossfade-enter-active,
+.crossfade-leave-active {
+  transition: opacity 500ms ease-out;
+}
+
+.crossfade-enter-from,
+.crossfade-leave-to {
+  opacity: 0;
+}
+
+/* Minimal slide transition */
+.page-slide-enter-active,
+.page-slide-leave-active {
+  transition: transform 400ms ease-out, opacity 400ms ease-out;
+}
+
+.page-slide-enter-from {
+  transform: translateX(10px);
+  opacity: 0;
+}
+
+.page-slide-leave-to {
+  transform: translateX(-10px);
+  opacity: 0;
+}
+
+/* ===== KEYFRAME DEFINITIONS ===== */
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideUp {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideLeft {
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseSimple {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== ANIMATION DELAYS FOR STAGGERING ===== */
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* ===== REDUCED MOTION SUPPORT ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all animations for users who prefer reduced motion */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Remove transforms for reduced motion */
+  .hover-scale:hover,
+  .hover-scale-sm:hover,
+  .hover-scale-lg:hover,
+  .btn-hover:hover,
+  .nav-underline:hover,
+  .btn:hover,
+  .nav-link:hover {
+    transform: none;
+  }
+}
+
+/* ===== MOBILE OPTIMIZATIONS ===== */
+
+/* Mobile-specific animation classes */
+.mobile-fade-in {
+  opacity: 0;
+  animation: fadeIn 250ms ease-out forwards;
+}
+
+.mobile-slide-up {
+  transform: translateY(10px);
+  opacity: 0;
+  animation: mobileSlideUp 300ms ease-out forwards;
+}
+
+.mobile-scale-hover {
+  transition: transform 150ms ease-out;
+}
+
+.mobile-scale-hover:hover,
+.mobile-scale-hover:active {
+  transform: scale(1.03);
+}
+
+/* Touch-optimized button animations */
+.mobile-btn-hover {
+  transition: transform 150ms ease-out, background-color 150ms ease-out;
+}
+
+.mobile-btn-hover:hover,
+.mobile-btn-hover:active {
+  transform: scale(1.03);
+}
+
+/* Simplified mobile navigation */
+.mobile-nav-underline {
+  position: relative;
+  transition: color 150ms ease-out;
+}
+
+.mobile-nav-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: currentColor;
+  transition: width 200ms ease-out;
+}
+
+.mobile-nav-underline:hover::after,
+.mobile-nav-underline:active::after {
+  width: 100%;
+}
+
+/* Mobile keyframes with reduced motion */
+@keyframes mobileSlideUp {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Override desktop animations with mobile-optimized versions */
+  .fade-in {
+    animation: fadeIn 250ms ease-out forwards;
+  }
+  
+  .slide-up {
+    transform: translateY(10px);
+    animation: mobileSlideUp 300ms ease-out forwards;
+  }
+  
+  .slide-down {
+    transform: translateY(-10px);
+    animation: slideDown 300ms ease-out forwards;
+  }
+  
+  .slide-left {
+    transform: translateX(10px);
+    animation: slideLeft 300ms ease-out forwards;
+  }
+  
+  .slide-right {
+    transform: translateX(-10px);
+    animation: slideRight 300ms ease-out forwards;
+  }
+  
+  /* Reduced scale effects for better touch interaction */
+  .hover-scale:hover,
+  .hover-scale:active,
+  .hover-scale-sm:hover,
+  .hover-scale-sm:active,
+  .hover-scale-lg:hover,
+  .hover-scale-lg:active {
+    transform: scale(1.03);
+  }
+  
+  .btn-hover:hover,
+  .btn-hover:active {
+    transform: scale(1.03);
+  }
+  
+  .nav-underline:hover,
+  .nav-underline:active {
+    transform: scale(1.02);
+  }
+  
+  /* Faster transitions on mobile for better responsiveness */
+  .hover-scale,
+  .hover-scale-sm,
+  .hover-scale-lg,
+  .btn-hover,
+  .nav-underline {
+    transition-duration: 150ms;
+  }
+  
+  .page-fade-enter-active,
+  .page-fade-leave-active,
+  .page-slide-enter-active,
+  .page-slide-leave-active,
+  .crossfade-enter-active,
+  .crossfade-leave-active {
+    transition-duration: 250ms;
+  }
+  
+  /* Disable complex animations on mobile for performance */
+  .pulse-simple {
+    animation-duration: 1.5s;
+  }
+  
+  /* Optimize spinner for mobile */
+  .spinner {
+    animation-duration: 0.8s;
+  }
+}
+
+/* ===== PERFORMANCE UTILITIES ===== */
+
+/* Force hardware acceleration for essential animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* Remove will-change after animation completes */
+.animation-complete {
+  will-change: auto;
+}
