@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Nuxt / Nitro build output
+.nuxt
+.nitro
+.output
+.data
+.cache
+dist
+.amplify-hosting
+
+# Environment files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log*
+
+# Personal notes — contain credentials, never commit
+dev_log.txt
+
+# Migration exports (contain visitor PII)
+scripts/migrate/data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
