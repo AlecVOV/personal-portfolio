@@ -37,7 +37,7 @@ Gom thay đổi rồi push một lần.
 
 | Việc | Trạng thái | Ghi chú |
 |---|---|---|
-| Chuyển dữ liệu lần cuối | Trang Ảnh: **không cần** (không có nội dung mới). Trang IT: **chưa chạy lại** | Chỉ cần nếu bạn đã sửa nội dung trên trang IT cũ sau 2026-09-25. Nói với Claude: "chạy lại migrate cho it". Chạy lại sẽ **ghi đè** dữ liệu trên trang mới bằng dữ liệu Supabase. |
+| Chuyển dữ liệu lần cuối | Trang Ảnh: **không cần** (không có nội dung mới). Trang IT: **chưa chạy lại** | Chỉ cần nếu bạn đã sửa nội dung trên trang IT cũ sau 2026-09-25. Nói với Claude: "chạy lại migrate cho it". Chạy lại sẽ **ghi đè** dữ liệu trên trang mới bằng dữ liệu Supabase — kể cả các sửa tay trên trang mới, ví dụ link Social "Photography" đã đổi sang `https://photo.chilonthon.com` ngày 2026-09-26 (Supabase vẫn giữ link Vercel cũ). Nếu chạy lại, sửa lại link này sau đó. |
 | Bạn tự thử trang mới | **Chưa** | Đăng nhập `/admin/login` trên cả 2 trang; thêm/sửa/xóa thử 1 mục; tải thử 1 ảnh; gửi thử form liên hệ và kiểm tra hộp thư outlook. |
 | Gắn tên miền riêng | **Xong** (2026-09-26) | Bước A–D ở mục 3. |
 | Gửi email trả lời trực tiếp cho khách | **Chưa** | Xem mục 3 (Bước E–F). |
