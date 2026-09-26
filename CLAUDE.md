@@ -108,6 +108,18 @@ Node 20 everywhere.
 - `nuxt.config.ts`: `nitro: { awsAmplify: { runtime: 'nodejs20.x' } }` (verify option against installed Nitro).
 - Don't add `vercel.json` or any Vercel package.
 
+Live resources (account 677276113002, created 2026-09-25/26):
+| | it-portfolio | photography-portfolio |
+|---|---|---|
+| Amplify app ID | `d21kdgth3ccglp` | `d9tbb9ql4bwpu` |
+| URL | https://main.d21kdgth3ccglp.amplifyapp.com | https://main.d9tbb9ql4bwpu.amplifyapp.com |
+| Table / compute role | `portfolio-it` / `portfolio-it-compute` | `portfolio-photo` / `portfolio-photo-compute` |
+- Stack `portfolio-infra`; Cognito pool `ap-southeast-1_7ochT3JZ0` (admin user = owner's outlook address, group `admin`).
+- Env vars are set with the AWS CLI from stack outputs (never typed by hand, never printed).
+  `update-app --environment-variables` REPLACES the whole map — always merge with the current map.
+- S3 CORS origins come from the stack parameter `AllowedOrigins`; add custom domains there and redeploy.
+- Amplify log groups `/aws/amplify/<appId>` pre-created with 14-day retention.
+
 ### amplify.yml (repo root)
 
 ```yaml
@@ -229,8 +241,8 @@ AWS SDK v3, `cloudinary`), config from `scripts/migrate/.env` (gitignored), outp
 - [x] Claude writes and dry-runs; the human runs `--apply`. (first full run 2026-09-25: VERIFY OK both apps; re-run at cutover) Claude never prints row contents, only counts and key names.
 
 Phase 6 — go live
-- [ ] Push to GitHub; create both Amplify apps (Singapore), attach compute roles, set env vars.
-- [ ] Verify SES identity; set an AWS Budget alert.
+- [x] Push to GitHub; create both Amplify apps (Singapore), attach compute roles, set env vars.
+- [x] Verify SES identity; set an AWS Budget alert. (SES identity verified; budget `portfolio-monthly-5usd` in the stack)
 - [ ] Content freeze on the old sites → final `export` + `import --apply` + `verify`.
 - [ ] Test admin login, CRUD, uploads, contact forms on the Amplify URLs.
 - [ ] Move domains from Vercel; then delete Vercel projects, Supabase project, Cloudinary, Resend, Web3Forms accounts/keys.
