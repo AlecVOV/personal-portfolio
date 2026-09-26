@@ -10,7 +10,7 @@
     >
       <div 
         v-if="isOpen" 
-        class="fixed inset-0 bg-black/95 z-50 flex flex-col"
+        class="fixed inset-0 bg-black/95 z-[100] flex flex-col"
         @click.self="closeLightbox"
         @keydown.esc="closeLightbox"
         tabindex="0"
@@ -203,8 +203,9 @@ const currentImage = computed(() => props.images[currentIndex.value] || {})
 const imageStyle = computed(() => ({
   transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value})`,
   transition: isPanning.value ? 'none' : 'transform 0.2s ease-out',
+  // Fit inside the viewport minus the control bar and caption (a % height is ignored in this flex layout)
   maxWidth: scale.value === 1 ? '100%' : 'none',
-  maxHeight: scale.value === 1 ? '100%' : 'none'
+  maxHeight: scale.value === 1 ? 'calc(100dvh - 10rem)' : 'none'
 }))
 
 // Methods

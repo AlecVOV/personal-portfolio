@@ -34,9 +34,9 @@
 
     <!-- Lightbox -->
     <ImageLightbox
-      v-if="isLightboxOpen"
+      :is-open="isLightboxOpen"
       :images="photos"
-      :current-index="currentImageIndex"
+      :initial-index="currentImageIndex"
       @close="closeLightbox"
       @index-change="updateIndex"
     />
