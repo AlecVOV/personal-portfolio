@@ -16,6 +16,17 @@ Parameters:
     Description: >-
       Site origins allowed to PUT to S3 with presigned URLs. Add the Amplify and custom domains
       (e.g. https://main.xxxx.amplifyapp.com) in Phase 6 and redeploy.
+  DomainName:
+    Type: String
+    Default: ''
+    Description: Custom domain (e.g. chilonthon.com) to verify in SES with DKIM + MAIL FROM. Empty = skip.
+  HostedZoneId:
+    Type: String
+    Default: ''
+    Description: Route 53 public hosted zone ID of DomainName (required when DomainName is set).
+
+Conditions:
+  HasDomain: !Not [!Equals [!Ref DomainName, '']]
 
 Resources:
   # ── DynamoDB ─────────────────────────────────────────────────────────────
@@ -261,6 +272,51 @@ Resources:
     Properties:
       EmailIdentity: !Ref OwnerEmail
 
+  # Domain identity: Easy DKIM (2048-bit) + custom MAIL FROM, so mail from contact@<domain> passes
+  # SPF/DKIM/DMARC. Records are written into the domain's Route 53 hosted zone.
+  DomainEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Condition: HasDomain
+    Properties:
+      EmailIdentity: !Ref DomainName
+      DkimAttributes: { SigningEnabled: true }
+      DkimSigningAttributes: { NextSigningKeyLength: RSA_2048_BIT }
+      MailFromAttributes:
+        MailFromDomain: !Sub mail.${DomainName}
+        BehaviorOnMxFailure: USE_DEFAULT_VALUE
+
+  DomainEmailRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: HasDomain
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: !GetAtt DomainEmailIdentity.DkimDNSTokenName1
+          Type: CNAME
+          TTL: '1800'
+          ResourceRecords: [!GetAtt DomainEmailIdentity.DkimDNSTokenValue1]
+        - Name: !GetAtt DomainEmailIdentity.DkimDNSTokenName2
+          Type: CNAME
+          TTL: '1800'
+          ResourceRecords: [!GetAtt DomainEmailIdentity.DkimDNSTokenValue2]
+        - Name: !GetAtt DomainEmailIdentity.DkimDNSTokenName3
+          Type: CNAME
+          TTL: '1800'
+          ResourceRecords: [!GetAtt DomainEmailIdentity.DkimDNSTokenValue3]
+        - Name: !Sub mail.${DomainName}
+          Type: MX
+          TTL: '1800'
+          ResourceRecords: [!Sub '10 feedback-smtp.${AWS::Region}.amazonses.com']
+        - Name: !Sub mail.${DomainName}
+          Type: TXT
+          TTL: '1800'
+          ResourceRecords: ['"v=spf1 include:amazonses.com ~all"']
+        # Monitor-only policy to start; tighten to p=quarantine once mail is confirmed to pass.
+        - Name: !Sub _dmarc.${DomainName}
+          Type: TXT
+          TTL: '1800'
+          ResourceRecords: ['"v=DMARC1; p=none"']
+
   # ── Cost alert (budgets without actions are free) ───────────────────────
   MonthlyBudget:
     Type: AWS::Budgets::Budget
@@ -376,3 +432,7 @@ Outputs:
   ItClientId:
     Description: APP_COGNITO_CLIENT_ID for it-portfolio
     Value: !Ref ItAppClient
+  SesDomainIdentity:
+    Condition: HasDomain
+    Description: SES domain identity (send as any address @ this domain once out of the sandbox)
+    Value: !Ref DomainEmailIdentity

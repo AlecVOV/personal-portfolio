@@ -114,12 +114,16 @@ Live resources (account 677276113002, created 2026-09-25/26):
 | | it-portfolio | photography-portfolio |
 |---|---|---|
 | Amplify app ID | `d21kdgth3ccglp` | `d9tbb9ql4bwpu` |
-| URL | https://main.d21kdgth3ccglp.amplifyapp.com | https://main.d9tbb9ql4bwpu.amplifyapp.com |
+| Custom domain | https://chilonthon.com (+ `www`) | https://photo.chilonthon.com |
+| Amplify URL | https://main.d21kdgth3ccglp.amplifyapp.com | https://main.d9tbb9ql4bwpu.amplifyapp.com |
 | Table / compute role | `portfolio-it` / `portfolio-it-compute` | `portfolio-photo` / `portfolio-photo-compute` |
 - Stack `portfolio-infra`; Cognito pool `ap-southeast-1_7ochT3JZ0` (admin user = owner's outlook address, group `admin`).
 - Env vars are set with the AWS CLI from stack outputs (never typed by hand, never printed).
   `update-app --environment-variables` REPLACES the whole map — always merge with the current map.
 - S3 CORS origins come from the stack parameter `AllowedOrigins`; add custom domains there and redeploy.
+- Domain `chilonthon.com` (Route 53, hosted zone `Z0587891YUXNJL0MMKU8`); SES domain identity + DKIM/MAIL FROM/DMARC
+  records come from the stack (`DomainName`, `HostedZoneId` params). Every deploy must pass all four parameters —
+  the exact command is in DEPLOY.md §6.
 - Amplify log groups `/aws/amplify/<appId>` pre-created with 14-day retention.
 
 ### amplify.yml (repo root)

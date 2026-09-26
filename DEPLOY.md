@@ -1,7 +1,7 @@
 # DEPLOY.md — trạng thái triển khai & các bước tiếp theo
 
 > Tài liệu cho chủ repo (đọc để biết đang ở đâu) và cho Claude (đọc để làm tiếp).
-> Cập nhật: 2026-09-26. Quy tắc làm việc và Hard rules nằm trong `CLAUDE.md` — vẫn áp dụng.
+> Cập nhật: 2026-09-26 (đã gắn tên miền `chilonthon.com`, SES đã xác minh tên miền). Quy tắc làm việc và Hard rules nằm trong `CLAUDE.md` — vẫn áp dụng.
 >
 > Cách dùng: mở Claude trong repo này và gõ, ví dụ:
 > **"Đọc DEPLOY.md rồi làm Bước A"** (hoặc bước nào bạn muốn). Claude sẽ hỏi từng việc một.
@@ -12,7 +12,8 @@
 
 | | Trang IT | Trang Ảnh |
 |---|---|---|
-| Địa chỉ hiện tại | https://main.d21kdgth3ccglp.amplifyapp.com | https://main.d9tbb9ql4bwpu.amplifyapp.com |
+| **Tên miền** | **https://chilonthon.com** (và https://www.chilonthon.com) | **https://photo.chilonthon.com** |
+| Địa chỉ Amplify (vẫn dùng được) | https://main.d21kdgth3ccglp.amplifyapp.com | https://main.d9tbb9ql4bwpu.amplifyapp.com |
 | Trang quản trị | `/admin/login` | `/admin/login` |
 | Amplify app ID | `d21kdgth3ccglp` | `d9tbb9ql4bwpu` |
 | Bảng DynamoDB | `portfolio-it` | `portfolio-photo` |
@@ -20,6 +21,8 @@
 
 - Tài khoản AWS `677276113002`, vùng **Singapore (ap-southeast-1)**, hạ tầng trong stack CloudFormation `portfolio-infra`
   (file `infra/template.yaml`).
+- Tên miền `chilonthon.com` mua qua Route 53 (tự gia hạn, hết hạn 2027-09-26), hosted zone `Z0587891YUXNJL0MMKU8`.
+  HTTPS do Amplify cấp và tự gia hạn (miễn phí).
 - Ảnh/file phục vụ qua CloudFront: `https://dfpws93hyi7js.cloudfront.net`.
 - Đăng nhập admin (cả 2 trang dùng chung 1 tài khoản): email `lhtthong.forwork@outlook.com` + mật khẩu bạn đã đặt.
   Có thể bật mã xác thực 2 lớp (TOTP) sau.
@@ -36,23 +39,21 @@ Gom thay đổi rồi push một lần.
 |---|---|---|
 | Chuyển dữ liệu lần cuối | Trang Ảnh: **không cần** (không có nội dung mới). Trang IT: **chưa chạy lại** | Chỉ cần nếu bạn đã sửa nội dung trên trang IT cũ sau 2026-09-25. Nói với Claude: "chạy lại migrate cho it". Chạy lại sẽ **ghi đè** dữ liệu trên trang mới bằng dữ liệu Supabase. |
 | Bạn tự thử trang mới | **Chưa** | Đăng nhập `/admin/login` trên cả 2 trang; thêm/sửa/xóa thử 1 mục; tải thử 1 ảnh; gửi thử form liên hệ và kiểm tra hộp thư outlook. |
-| Gắn tên miền riêng | **Chưa** | Xem mục 3 (Bước A–D). |
+| Gắn tên miền riêng | **Xong** (2026-09-26) | Bước A–D ở mục 3. |
 | Gửi email trả lời trực tiếp cho khách | **Chưa** | Xem mục 3 (Bước E–F). |
 | Dọn dịch vụ cũ | **Chưa** | Xem mục 4. Chỉ làm **sau khi** tên miền mới chạy ổn. |
 | Repo cũ `AlecVOV/chilonthon-portfolio-site` | **Chưa** | Chuyển sang Private hoặc xóa — lịch sử của nó chứa `.env` và `dev_log.txt`. |
 
-## 3. Kế hoạch tên miền + email (chưa làm — hỏi Claude từng bước)
+## 3. Tên miền + email (A–D xong; E–F còn lại)
 
-Mục tiêu: **mua 1 tên miền dùng chung cho 2 trang**, quản lý DNS bằng **Route 53 hosted zone**, và dùng **Amazon SES**
-để gửi email trả lời khách từ địa chỉ của tên miền (ví dụ `contact@tenmien.com`).
-
-Ví dụ bố trí (thay `tenmien.com` bằng tên bạn mua):
+Mục tiêu: **1 tên miền dùng chung cho 2 trang**, DNS trên **Route 53 hosted zone**, và **Amazon SES** gửi email
+trả lời khách từ địa chỉ của tên miền.
 
 | Địa chỉ | Trỏ tới |
 |---|---|
-| `tenmien.com` và `www.tenmien.com` | Trang IT (Amplify `d21kdgth3ccglp`) |
-| `photo.tenmien.com` | Trang Ảnh (Amplify `d9tbb9ql4bwpu`) |
-| `contact@tenmien.com` | Địa chỉ **gửi** email (SES). Khách bấm Reply → thư về outlook của bạn (Reply-To). |
+| `chilonthon.com` và `www.chilonthon.com` | Trang IT (Amplify `d21kdgth3ccglp`). Cả 2 cùng hiển thị trang IT; thẻ canonical trỏ về `https://chilonthon.com`. |
+| `photo.chilonthon.com` | Trang Ảnh (Amplify `d9tbb9ql4bwpu`) |
+| `contact@chilonthon.com` | (Bước F) địa chỉ **gửi** email qua SES. Khách bấm Reply → thư về outlook của bạn (Reply-To). |
 
 ### Chi phí dự kiến (thêm vào hiện tại)
 - Tên miền: khoảng **13–15 USD/năm** cho `.com` nếu mua qua Route 53 (đuôi khác giá khác — xem lúc mua).
@@ -61,30 +62,30 @@ Ví dụ bố trí (thay `tenmien.com` bằng tên bạn mua):
 - SES: 0,10 USD / 1.000 email.
 - Tổng vẫn nằm dưới Budget 5 USD/tháng; phí tên miền trả 1 lần/năm nên tháng mua có thể vượt cảnh báo 80%.
 
-### Bước A — Mua tên miền (bạn làm, tốn tiền)
-1. AWS Console → **Route 53** → **Registered domains** → **Register domains**, tìm tên, thanh toán.
-2. Route 53 **tự tạo hosted zone** cho tên miền. Chờ trạng thái đăng ký thành công (vài phút tới vài giờ),
-   và xác nhận email từ AWS/ICANN gửi về (nếu có) — nếu không xác nhận, tên miền có thể bị tạm khóa.
-3. (Nếu mua ở nơi khác như Namecheap/GoDaddy: tạo hosted zone trong Route 53 rồi đổi 4 nameserver ở nơi mua
-   sang nameserver của Route 53. Claude sẽ hướng dẫn.)
+### Bước A — Mua tên miền — **XONG** (bạn làm, 2026-09-26)
+- `chilonthon.com` qua Route 53; hosted zone tạo tự động; nameserver đăng ký khớp với hosted zone.
 
-### Bước B — Gắn tên miền vào 2 app Amplify (Claude làm được bằng CLI, bạn chỉ xác nhận)
-- Trang IT: domain `tenmien.com`, subdomain `@` và `www` → branch `main`.
-- Trang Ảnh: domain `photo.tenmien.com` → branch `main`.
-  (Amplify cho phép gắn subdomain làm domain của app thứ hai; Claude kiểm tra lại lúc làm.)
-- Amplify tự tạo bản ghi DNS trong hosted zone và cấp HTTPS; chờ trạng thái `AVAILABLE` (thường 15–30 phút).
+### Bước B — Gắn tên miền vào 2 app Amplify — **XONG** (Claude, CLI)
+- Trang IT: domain `chilonthon.com`, subdomain `@` và `www` → branch `main`.
+- Trang Ảnh: domain `photo.chilonthon.com` → branch `main` (Amplify chấp nhận subdomain làm domain của app thứ hai).
+- Amplify tự tạo bản ghi DNS trong hosted zone và cấp chứng chỉ HTTPS (Amazon, `AMPLIFY_MANAGED`, tự gia hạn).
+- `www` và tên miền gốc cùng hiển thị trang IT (không có chuyển hướng 301). Muốn `www` tự chuyển về
+  `chilonthon.com` thì hỏi Claude — tùy chọn, không bắt buộc.
 
-### Bước C — Cập nhật cấu hình theo tên miền mới (Claude làm, cần bạn gõ "deploy" cho bước hạ tầng)
-- Biến `NUXT_PUBLIC_SITE_URL` của trang IT → `https://tenmien.com`, rồi build lại.
-- Tham số stack `AllowedOrigins` (CORS cho tải ảnh lên S3) → thêm `https://tenmien.com`, `https://www.tenmien.com`,
-  `https://photo.tenmien.com`, rồi deploy lại stack (miễn phí).
+### Bước C — Cập nhật cấu hình theo tên miền mới — **XONG** (Claude)
+- `NUXT_PUBLIC_SITE_URL` của trang IT = `https://chilonthon.com` (đã build lại).
+- Tham số stack `AllowedOrigins` (CORS tải ảnh lên S3) giờ gồm: `http://localhost:3000`, 2 địa chỉ `*.amplifyapp.com`,
+  `https://chilonthon.com`, `https://www.chilonthon.com`, `https://photo.chilonthon.com`.
 - Cognito không cần sửa (không dùng hosted UI/callback URL).
 
-### Bước D — Xác minh tên miền cho SES (Claude làm, cần "deploy")
-- Thêm vào `infra/template.yaml`: SES email identity cho **tên miền** (Easy DKIM) + các bản ghi Route 53:
-  3 CNAME DKIM, MAIL FROM `mail.tenmien.com` (MX + TXT SPF `v=spf1 include:amazonses.com ~all`),
-  DMARC `_dmarc.tenmien.com` (TXT `v=DMARC1; p=none; rua=mailto:lhtthong.forwork@outlook.com`).
-- Chờ SES báo domain **Verified** (vài phút tới 72 giờ).
+### Bước D — Xác minh tên miền cho SES — **XONG** (Claude, qua stack)
+- `infra/template.yaml` có thêm SES identity cho `chilonthon.com` (Easy DKIM 2048-bit) và các bản ghi trong hosted zone:
+  3 CNAME DKIM, MAIL FROM `mail.chilonthon.com` (MX `feedback-smtp.ap-southeast-1.amazonses.com` + TXT SPF
+  `v=spf1 include:amazonses.com ~all`), DMARC `_dmarc.chilonthon.com` = `v=DMARC1; p=none`.
+- Kết quả: SES báo domain **Verified**, DKIM **SUCCESS**, MAIL FROM **SUCCESS**.
+- DMARC để `p=none` (chỉ theo dõi) và không có `rua`: địa chỉ outlook không nhận báo cáo DMARC của tên miền khác.
+  Khi thư từ `contact@chilonthon.com` đã gửi ổn định (sau Bước F), có thể siết lên `p=quarantine`.
+- Tham số stack mới: `DomainName=chilonthon.com`, `HostedZoneId=Z0587891YUXNJL0MMKU8`.
 
 ### Bước E — Xin ra khỏi SES sandbox (bạn làm trên web, AWS duyệt ~24 giờ)
 - Hiện SES đang ở **sandbox**: chỉ gửi được tới địa chỉ đã xác minh (outlook của bạn). Muốn gửi thẳng cho khách
@@ -96,9 +97,10 @@ Ví dụ bố trí (thay `tenmien.com` bằng tên bạn mua):
 - Hiện nút **Reply** trong `/admin/messages` (trang IT) gửi bản nháp **về outlook của bạn** (Reply-To = khách),
   bạn bấm Reply trong hộp thư để gửi cho khách — do SES sandbox.
 - Sau khi có production access: `server/api/messages/send-reply.post.ts` gửi **thẳng cho khách**
-  từ `contact@tenmien.com`, Reply-To = outlook của bạn; đổi `SES_FROM_EMAIL` = `contact@tenmien.com` cho cả 2 app;
-  cập nhật IAM `ses:SendEmail` trong template sang identity của tên miền; build lại 2 app.
-- Nhận email **tại** `contact@tenmien.com` là không cần thiết (khách trả lời sẽ về outlook qua Reply-To).
+  từ `contact@chilonthon.com`, Reply-To = outlook của bạn; đổi `SES_FROM_EMAIL` = `contact@chilonthon.com` cho cả 2 app;
+  cập nhật IAM `ses:SendEmail` trong template sang identity `chilonthon.com` (ARN `…:identity/chilonthon.com`,
+  điều kiện `ses:FromAddress`); deploy stack; build lại 2 app.
+- Nhận email **tại** `contact@chilonthon.com` là không cần thiết (khách trả lời sẽ về outlook qua Reply-To).
   Nếu sau này muốn hộp thư riêng cho tên miền thì cần dịch vụ chuyển tiếp email — hỏi Claude.
 
 ## 4. Dọn dẹp dịch vụ cũ (chỉ sau khi tên miền mới chạy ổn — xóa là không hoàn tác)
@@ -124,5 +126,12 @@ Ví dụ bố trí (thay `tenmien.com` bằng tên bạn mua):
 - Biến môi trường Amplify đặt bằng CLI từ output của stack (xem mục "Live resources" trong CLAUDE.md);
   `update-app --environment-variables` **thay toàn bộ** danh sách — luôn gộp với danh sách hiện có, không in giá trị.
 - Build lại một app: `aws amplify start-job --app-id <id> --branch-name main --job-type RELEASE --region ap-southeast-1`
-- Deploy hạ tầng luôn cần chủ repo gõ đồng ý trong phiên (Hard rule 3); nhớ truyền lại `OwnerEmail` và `AllowedOrigins`.
+- Deploy hạ tầng luôn cần chủ repo gõ đồng ý trong phiên (Hard rule 3). Luôn truyền **đủ** tham số:
+  ```bash
+  aws cloudformation deploy --template-file infra/template.yaml --stack-name portfolio-infra \
+    --capabilities CAPABILITY_NAMED_IAM --region ap-southeast-1 --parameter-overrides \
+    OwnerEmail=lhtthong.forwork@outlook.com DomainName=chilonthon.com HostedZoneId=Z0587891YUXNJL0MMKU8 \
+    "AllowedOrigins=http://localhost:3000,https://main.d21kdgth3ccglp.amplifyapp.com,https://main.d9tbb9ql4bwpu.amplifyapp.com,https://chilonthon.com,https://www.chilonthon.com,https://photo.chilonthon.com"
+  ```
+- Tên miền Amplify: `aws amplify list-domain-associations --app-id <id> --region ap-southeast-1`.
 - Trên Windows Git Bash: đặt `MSYS_NO_PATHCONV=1` khi lệnh AWS có đường dẫn bắt đầu bằng `/aws/...`.
