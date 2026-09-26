@@ -14,6 +14,8 @@ The owner is not an infrastructure person. Claude drives the Migration checklist
 - Never ask the human to read code or diffs. After each Phase, summarize in 2–3 sentences what was done, then continue.
 - On errors, read the logs and fix them yourself. Ask only when truly stuck.
 - All Hard rules still apply, especially: never print secret values.
+- Current deployment status and the next steps (custom domain, SES domain + production access, cleanup)
+  live in `DEPLOY.md` — read it first when resuming work.
 
 ## Target architecture
 
