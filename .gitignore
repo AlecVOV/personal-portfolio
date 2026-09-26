@@ -27,3 +27,6 @@ scripts/migrate/data/
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Browser-test artifacts (Playwright MCP)
+.playwright-mcp/
