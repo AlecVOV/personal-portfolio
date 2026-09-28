@@ -38,9 +38,9 @@ Gom thay đổi rồi push một lần.
 | Việc | Trạng thái | Ghi chú |
 |---|---|---|
 | Chuyển dữ liệu lần cuối | Trang Ảnh: **không cần** (không có nội dung mới). Trang IT: **chưa chạy lại** | Chỉ cần nếu bạn đã sửa nội dung trên trang IT cũ sau 2026-09-25. Nói với Claude: "chạy lại migrate cho it". Chạy lại sẽ **ghi đè** dữ liệu trên trang mới bằng dữ liệu Supabase — kể cả các sửa tay trên trang mới, ví dụ link Social "Photography" đã đổi sang `https://photo.chilonthon.com` ngày 2026-09-26 (Supabase vẫn giữ link Vercel cũ). Nếu chạy lại, sửa lại link này sau đó. |
-| Bạn tự thử trang mới | **Chưa** | Đăng nhập `/admin/login` trên cả 2 trang; thêm/sửa/xóa thử 1 mục; tải thử 1 ảnh; gửi thử form liên hệ và kiểm tra hộp thư outlook. |
+| Bạn tự thử trang mới | **Một phần** (2026-09-28) | Đã thử OK trên trang IT: đăng nhập admin, form liên hệ → thư về outlook, Reply → thư tới Gmail từ `contact@chilonthon.com`. Còn lại: thêm/sửa/xóa thử 1 mục và tải thử 1 ảnh trên cả 2 trang; gửi thử form liên hệ của trang Ảnh. |
 | Gắn tên miền riêng | **Xong** (2026-09-26) | Bước A–D ở mục 3. |
-| Gửi email trả lời trực tiếp cho khách | **Xong** (Bước E + F, 2026-09-28) — cần bạn thử thật (xem mục 2, dòng "Bạn tự thử trang mới") | Xem mục 3 (Bước E–F). |
+| Gửi email trả lời trực tiếp cho khách | **Xong** (Bước E + F, 2026-09-28) — đã thử thật thành công | Xem mục 3 (Bước E–F). |
 | Dọn dịch vụ cũ | **Chưa** | Xem mục 4. Chỉ làm **sau khi** tên miền mới chạy ổn. |
 | Repo cũ `AlecVOV/chilonthon-portfolio-site` | **Chưa** | Chuyển sang Private hoặc xóa — lịch sử của nó chứa `.env` và `dev_log.txt`. |
 
