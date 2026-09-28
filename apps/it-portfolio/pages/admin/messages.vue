@@ -57,11 +57,10 @@
           <h3 class="text-lg font-semibold mb-4">Reply to {{ replyTarget.guest_name }}</h3>
 
           <form @submit.prevent="sendReply" class="space-y-4">
-            <div>
-              <label class="block text-sm text-gray-300 mb-1">Sender</label>
-              <p class="text-white">{{ senderEmail }}</p>
-              <label class="block text-sm text-gray-300 mb-1 pt-2">CC:</label>
-              <p class="text-white">{{ ccList }}</p>
+            <div class="text-sm space-y-1">
+              <p><span class="text-gray-400">From:</span> <span class="text-white">{{ senderEmail }}</span></p>
+              <p><span class="text-gray-400">To:</span> <span class="text-white">{{ replyTarget.guest_email }}</span></p>
+              <p class="text-gray-400 text-xs">When they answer, it goes to your own mailbox (Reply-To).</p>
             </div>
             <div>
               <label class="block text-sm text-gray-300 mb-1">Subject</label>
@@ -93,12 +92,7 @@ const viewingMessage = ref<any>(null)
 const replyTarget = ref<any>(null)
 const sending = ref(false)
 
-const senderEmail = 'lhtthong.forwork@outlook.com'
-const ccList = [
-  'lhtthong.forwork@gmail.com',
-  'lehoangtrietthong@gmail.com',
-  'lehoangtrietthong2102004@gmail.com',
-].join(', ')
+const senderEmail = 'Le Hoang Triet Thong <contact@chilonthon.com>'
 const replySubject = ref('')
 const replyBody = ref('')
 
@@ -117,7 +111,7 @@ await load()
 const openMessage = (msg: any) => { viewingMessage.value = msg }
 const openReply = (msg: any) => {
   replyTarget.value = msg
-  replySubject.value = `Re: Your message to Alec Le`
+  replySubject.value = `Re: Your message to Le Hoang Triet Thong`
   replyBody.value = `Hi ${msg.guest_name},\n\nThank you for reaching out!\n\n`
 }
 
@@ -126,20 +120,19 @@ const sendReply = async () => {
   try {
     await $fetch('/api/messages/send-reply', {
       method: 'POST',
+      // The server sends to the stored guest address of this message and marks it replied.
       body: {
-        to: replyTarget.value.guest_email,
-        guestName: replyTarget.value.guest_name,
+        id: replyTarget.value.id,
         subject: replySubject.value,
         message: replyBody.value,
       },
     })
 
-    await $fetch(`/api/admin/messages/${replyTarget.value.id}`, { method: 'PUT', body: { replied: true } })
     replyTarget.value = null
     await load()
-  } catch (err) {
+  } catch (err: any) {
     console.error(err)
-    alert('Failed to send reply.')
+    alert(err?.data?.message || 'Failed to send reply.')
   } finally {
     sending.value = false
   }
