@@ -40,7 +40,7 @@ Gom thay đổi rồi push một lần.
 | Chuyển dữ liệu lần cuối | Trang Ảnh: **không cần** (không có nội dung mới). Trang IT: **chưa chạy lại** | Chỉ cần nếu bạn đã sửa nội dung trên trang IT cũ sau 2026-09-25. Nói với Claude: "chạy lại migrate cho it". Chạy lại sẽ **ghi đè** dữ liệu trên trang mới bằng dữ liệu Supabase — kể cả các sửa tay trên trang mới, ví dụ link Social "Photography" đã đổi sang `https://photo.chilonthon.com` ngày 2026-09-26 (Supabase vẫn giữ link Vercel cũ). Nếu chạy lại, sửa lại link này sau đó. |
 | Bạn tự thử trang mới | **Chưa** | Đăng nhập `/admin/login` trên cả 2 trang; thêm/sửa/xóa thử 1 mục; tải thử 1 ảnh; gửi thử form liên hệ và kiểm tra hộp thư outlook. |
 | Gắn tên miền riêng | **Xong** (2026-09-26) | Bước A–D ở mục 3. |
-| Gửi email trả lời trực tiếp cho khách | **Bước E xong** (2026-09-28); **Bước F: code xong, chờ deploy** | Xem mục 3 (Bước E–F). |
+| Gửi email trả lời trực tiếp cho khách | **Xong** (Bước E + F, 2026-09-28) — cần bạn thử thật (xem mục 2, dòng "Bạn tự thử trang mới") | Xem mục 3 (Bước E–F). |
 | Dọn dịch vụ cũ | **Chưa** | Xem mục 4. Chỉ làm **sau khi** tên miền mới chạy ổn. |
 | Repo cũ `AlecVOV/chilonthon-portfolio-site` | **Chưa** | Chuyển sang Private hoặc xóa — lịch sử của nó chứa `.env` và `dev_log.txt`. |
 
@@ -99,7 +99,7 @@ Ghi chú gốc của bước này:
 - Mô tả gợi ý: *transactional email only — replies to visitors who contacted me through my personal portfolio contact
   form; low volume (< 100/month); no marketing; bounces/complaints handled manually.*
 
-### Bước F — Gửi email trả lời thẳng cho khách — **code xong** (Claude)
+### Bước F — Gửi email trả lời thẳng cho khách — **XONG** (Claude, 2026-09-28)
 - Nút **Reply** trong `/admin/messages` (trang IT) gửi thư **thẳng cho khách** từ
   `Le Hoang Triet Thong <contact@chilonthon.com>`, Reply-To = hộp thư của bạn, có dòng chân như đã cam kết với AWS.
 - Server chỉ gửi tới địa chỉ khách **đã lưu** của tin nhắn đó (không nhận địa chỉ từ trình duyệt), rồi tự đánh dấu "đã trả lời".
@@ -107,7 +107,7 @@ Ghi chú gốc của bước này:
 - Mọi thư đặt `FeedbackForwardingEmailAddress` = hộp thư của bạn → bounce/complaint về outlook.
 - IAM: 2 compute role được `ses:SendEmail` trên identity `chilonthon.com` và địa chỉ của bạn, giới hạn
   `ses:FromAddress` ∈ {`contact@chilonthon.com`, địa chỉ của bạn}.
-- Còn lại để chạy: deploy stack (IAM) → đổi `SES_FROM_EMAIL=contact@chilonthon.com` trên 2 app Amplify → push/build.
+- Đã chạy: deploy stack (IAM), đặt `SES_FROM_EMAIL=contact@chilonthon.com` trên 2 app Amplify, build lại 2 app.
 - Nhận email **tại** `contact@chilonthon.com` là không cần thiết (khách trả lời sẽ về outlook qua Reply-To).
   Nếu sau này muốn hộp thư riêng cho tên miền thì cần dịch vụ chuyển tiếp email — hỏi Claude.
 
