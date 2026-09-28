@@ -26,7 +26,7 @@ The owner is not an infrastructure person. Claude drives the Migration checklist
 | Admin auth | Supabase Auth | Amazon Cognito user pool (Lite tier, self sign-up off, 1 admin user), shared by both apps, one app client per app |
 | Images / files | Cloudinary, Supabase Storage | One private S3 bucket + one CloudFront distribution (OAC), prefixes `photo/` and `it/` |
 | Uploads | Cloudinary widget | Browser resizes → server route returns S3 presigned PUT URL → browser uploads directly |
-| Email | Resend | Amazon SES (sandbox is fine: only sends to the owner's verified address) |
+| Email | Resend | Amazon SES, production access (2026-09-28), domain identity `chilonthon.com`; sender `contact@chilonthon.com` |
 | Contact forms | Web3Forms | Own server route → save to DynamoDB + SES notification |
 | AWS credentials in SSR | — | Amplify **IAM compute role** per app. No access keys in env, ever |
 | Infra as code | — | `infra/template.yaml` (CloudFormation), deployed with `aws cloudformation deploy` |
@@ -172,7 +172,7 @@ Amplify reserves names starting with `AWS`, so app variables use the `APP_` pref
 |---|---|---|
 | `APP_REGION=ap-southeast-1` | `NUXT_PUBLIC_SITE_URL`, `NUXT_SITE_NAME`, `NUXT_SITE_DESCRIPTION` | — |
 | `APP_TABLE_NAME` | | |
-| `SES_FROM_EMAIL`, `CONTACT_TO_EMAIL` (both = the SES-verified owner address while in sandbox) | | |
+| `SES_FROM_EMAIL=contact@chilonthon.com`, `CONTACT_TO_EMAIL` = owner's mailbox (also receives bounce/complaint feedback) | | |
 | `APP_MEDIA_BUCKET`, `NUXT_PUBLIC_MEDIA_BASE_URL` (CloudFront URL) | | |
 | `NUXT_SESSION_PASSWORD` (≥32 chars), `APP_COGNITO_USER_POOL_ID`, `APP_COGNITO_CLIENT_ID` (per app), `APP_ADMIN_SUB` | | |
 
@@ -188,8 +188,9 @@ Each app has `.env.example` with names only.
    If a secret is ever printed, stop and tell the human which credential to rotate.
 3. Never run `aws cloudformation deploy`, `aws s3 rm`, `aws dynamodb delete-*`, or anything that creates cost or deletes data without the human explicitly saying so in this session. Read-only `aws ... describe/list/get` is fine.
 4. IAM least privilege: each compute role gets only its own table (+ its GSI) and its own S3 prefix, plus
-   `ses:SendEmail` from the verified identity (both apps: contact-form notifications; the owner chose this for
-   photography-portfolio on 2026-09-25).
+   `ses:SendEmail` limited by `ses:FromAddress` to `contact@<domain>` / the owner address (both apps: contact-form
+   notifications; the owner chose this for photography-portfolio on 2026-09-25). Replies (it-portfolio
+   `send-reply`) only go to the stored guest address of an existing message — never to an address from the request.
 5. One app per commit unless the change is repo-wide.
 6. Migrate photography-portfolio first (it already routes data through `server/api`), then it-portfolio.
 

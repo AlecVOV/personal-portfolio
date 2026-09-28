@@ -211,12 +211,19 @@ Resources:
                 Condition:
                   StringLike: { 's3:prefix': ['photo/', 'photo/*'] }
               # Contact form notification (owner chose email over admin-only storage, 2026-09-25)
+              # Send as contact@<domain> (SES production access) or the owner address; feedback
+              # (bounces/complaints) is forwarded to the owner identity.
               - Sid: SendFromVerifiedIdentity
                 Effect: Allow
                 Action: ses:SendEmail
-                Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${OwnerEmail}
+                Resource:
+                  - !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${OwnerEmail}
+                  - !If [HasDomain, !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${DomainName}', !Ref AWS::NoValue]
                 Condition:
-                  StringEquals: { 'ses:FromAddress': !Ref OwnerEmail }
+                  StringEquals:
+                    'ses:FromAddress':
+                      - !Ref OwnerEmail
+                      - !If [HasDomain, !Sub 'contact@${DomainName}', !Ref AWS::NoValue]
 
   ItComputeRole:
     Type: AWS::IAM::Role
@@ -258,12 +265,19 @@ Resources:
                 Resource: !GetAtt MediaBucket.Arn
                 Condition:
                   StringLike: { 's3:prefix': ['it/', 'it/*'] }
+              # Send as contact@<domain> (SES production access) or the owner address; feedback
+              # (bounces/complaints) is forwarded to the owner identity.
               - Sid: SendFromVerifiedIdentity
                 Effect: Allow
                 Action: ses:SendEmail
-                Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${OwnerEmail}
+                Resource:
+                  - !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${OwnerEmail}
+                  - !If [HasDomain, !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${DomainName}', !Ref AWS::NoValue]
                 Condition:
-                  StringEquals: { 'ses:FromAddress': !Ref OwnerEmail }
+                  StringEquals:
+                    'ses:FromAddress':
+                      - !Ref OwnerEmail
+                      - !If [HasDomain, !Sub 'contact@${DomainName}', !Ref AWS::NoValue]
 
   # ── SES ──────────────────────────────────────────────────────────────────
   # Creating this sends a verification email to OwnerEmail; the owner must click the link.

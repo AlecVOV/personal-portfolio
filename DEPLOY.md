@@ -40,7 +40,7 @@ Gom thay đổi rồi push một lần.
 | Chuyển dữ liệu lần cuối | Trang Ảnh: **không cần** (không có nội dung mới). Trang IT: **chưa chạy lại** | Chỉ cần nếu bạn đã sửa nội dung trên trang IT cũ sau 2026-09-25. Nói với Claude: "chạy lại migrate cho it". Chạy lại sẽ **ghi đè** dữ liệu trên trang mới bằng dữ liệu Supabase — kể cả các sửa tay trên trang mới, ví dụ link Social "Photography" đã đổi sang `https://photo.chilonthon.com` ngày 2026-09-26 (Supabase vẫn giữ link Vercel cũ). Nếu chạy lại, sửa lại link này sau đó. |
 | Bạn tự thử trang mới | **Chưa** | Đăng nhập `/admin/login` trên cả 2 trang; thêm/sửa/xóa thử 1 mục; tải thử 1 ảnh; gửi thử form liên hệ và kiểm tra hộp thư outlook. |
 | Gắn tên miền riêng | **Xong** (2026-09-26) | Bước A–D ở mục 3. |
-| Gửi email trả lời trực tiếp cho khách | **Chưa** | Xem mục 3 (Bước E–F). |
+| Gửi email trả lời trực tiếp cho khách | **Bước E xong** (2026-09-28); **Bước F: code xong, chờ deploy** | Xem mục 3 (Bước E–F). |
 | Dọn dịch vụ cũ | **Chưa** | Xem mục 4. Chỉ làm **sau khi** tên miền mới chạy ổn. |
 | Repo cũ `AlecVOV/chilonthon-portfolio-site` | **Chưa** | Chuyển sang Private hoặc xóa — lịch sử của nó chứa `.env` và `dev_log.txt`. |
 
@@ -87,19 +87,27 @@ trả lời khách từ địa chỉ của tên miền.
   Khi thư từ `contact@chilonthon.com` đã gửi ổn định (sau Bước F), có thể siết lên `p=quarantine`.
 - Tham số stack mới: `DomainName=chilonthon.com`, `HostedZoneId=Z0587891YUXNJL0MMKU8`.
 
-### Bước E — Xin ra khỏi SES sandbox (bạn làm trên web, AWS duyệt ~24 giờ)
+### Bước E — Xin ra khỏi SES sandbox — **XONG** (2026-09-28)
+- AWS đã duyệt (case `179040656500490`): production access, 50.000 email/ngày, 14 email/giây.
+- Danh sách tự chặn (suppression list) của tài khoản bật cho BOUNCE và COMPLAINT.
+- Cam kết trong thư gửi AWS (đã làm ở Bước F): chỉ trả lời người đã liên hệ trước; bounce/complaint chuyển về
+  hộp thư của bạn; mỗi thư trả lời có dòng chân "You are receiving this because you contacted me via chilonthon.com…".
+
+Ghi chú gốc của bước này:
 - Hiện SES đang ở **sandbox**: chỉ gửi được tới địa chỉ đã xác minh (outlook của bạn). Muốn gửi thẳng cho khách
   phải xin **production access**: SES console (Singapore) → **Account dashboard** → **Request production access**.
 - Mô tả gợi ý: *transactional email only — replies to visitors who contacted me through my personal portfolio contact
   form; low volume (< 100/month); no marketing; bounces/complaints handled manually.*
 
-### Bước F — Sửa code gửi email trả lời (Claude làm, sau khi E được duyệt)
-- Hiện nút **Reply** trong `/admin/messages` (trang IT) gửi bản nháp **về outlook của bạn** (Reply-To = khách),
-  bạn bấm Reply trong hộp thư để gửi cho khách — do SES sandbox.
-- Sau khi có production access: `server/api/messages/send-reply.post.ts` gửi **thẳng cho khách**
-  từ `contact@chilonthon.com`, Reply-To = outlook của bạn; đổi `SES_FROM_EMAIL` = `contact@chilonthon.com` cho cả 2 app;
-  cập nhật IAM `ses:SendEmail` trong template sang identity `chilonthon.com` (ARN `…:identity/chilonthon.com`,
-  điều kiện `ses:FromAddress`); deploy stack; build lại 2 app.
+### Bước F — Gửi email trả lời thẳng cho khách — **code xong** (Claude)
+- Nút **Reply** trong `/admin/messages` (trang IT) gửi thư **thẳng cho khách** từ
+  `Le Hoang Triet Thong <contact@chilonthon.com>`, Reply-To = hộp thư của bạn, có dòng chân như đã cam kết với AWS.
+- Server chỉ gửi tới địa chỉ khách **đã lưu** của tin nhắn đó (không nhận địa chỉ từ trình duyệt), rồi tự đánh dấu "đã trả lời".
+- Thư báo form liên hệ (cả 2 trang) gửi từ `contact@chilonthon.com` tới hộp thư của bạn, Reply-To = khách.
+- Mọi thư đặt `FeedbackForwardingEmailAddress` = hộp thư của bạn → bounce/complaint về outlook.
+- IAM: 2 compute role được `ses:SendEmail` trên identity `chilonthon.com` và địa chỉ của bạn, giới hạn
+  `ses:FromAddress` ∈ {`contact@chilonthon.com`, địa chỉ của bạn}.
+- Còn lại để chạy: deploy stack (IAM) → đổi `SES_FROM_EMAIL=contact@chilonthon.com` trên 2 app Amplify → push/build.
 - Nhận email **tại** `contact@chilonthon.com` là không cần thiết (khách trả lời sẽ về outlook qua Reply-To).
   Nếu sau này muốn hộp thư riêng cho tên miền thì cần dịch vụ chuyển tiếp email — hỏi Claude.
 
