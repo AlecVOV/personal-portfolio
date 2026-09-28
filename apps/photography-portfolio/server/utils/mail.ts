@@ -1,4 +1,4 @@
-// Owner notifications through SES (sandbox: sender and recipient are the verified owner address).
+// Owner notifications through SES. Sender = SES_FROM_EMAIL (contact@<domain>), recipient = CONTACT_TO_EMAIL.
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2'
 
 let ses: SESv2Client | undefined
@@ -20,9 +20,11 @@ export async function notifyOwner(opts: { subject: string, replyTo?: string, fie
     .join('')
 
   await ses.send(new SendEmailCommand({
-    FromEmailAddress: cfg.sesFromEmail,
+    FromEmailAddress: `LensCraft Photography <${cfg.sesFromEmail}>`,
     Destination: { ToAddresses: [cfg.contactToEmail] },
     ReplyToAddresses: opts.replyTo ? [opts.replyTo] : undefined,
+    // Bounces/complaints go to the owner's verified mailbox, not the (mailbox-less) sender address.
+    FeedbackForwardingEmailAddress: cfg.contactToEmail,
     Content: {
       Simple: {
         Subject: { Data: oneLine(opts.subject), Charset: 'UTF-8' },
